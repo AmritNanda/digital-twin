@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Strategic Intelligence System</title>
+  <meta name="description" content="Autonomous agentic strategic decision intelligence for business launch, pricing, and positioning decisions." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" />
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <!-- HEADER -->
+  <header id="app-header">
+    <div class="header-inner">
+      <div class="logo">
+        <span class="logo-icon">⬡</span>
+        <span class="logo-text">StrategyTwin</span>
+        <span class="logo-badge">ALPHA</span>
+      </div>
+      <div class="header-status" id="header-status">
+        <span class="pulse" id="status-dot"></span>
+        <span id="status-text">Ready</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN LAYOUT -->
+  <main id="app-main">
+
+    <!-- ── SETUP PANEL (shown first) ─────────────────────────────── -->
+    <section id="setup-panel" class="panel setup-panel">
+      <div class="setup-hero">
+        <h1>Autonomous Strategic Intelligence</h1>
+        <p class="setup-subtitle">
+          Provide company information and ask a strategic question.<br/>
+          The system will investigate, build a market model, test competing strategies,<br/>
+          challenge its own conclusions, and arrive at an evidence-backed recommendation.
+        </p>
+      </div>
+
+      <div class="setup-form">
+        <!-- Upload -->
+        <div class="form-group" id="upload-group">
+          <label class="form-label">Company Document</label>
+          <div class="drop-zone" id="drop-zone">
+            <div class="drop-zone-inner">
+              <span class="drop-icon">📄</span>
+              <span class="drop-text">Drop a PDF, CSV, or TXT file here</span>
+              <span class="drop-subtext">or</span>
+              <label class="btn btn-outline" for="file-input">Browse File</label>
+            </div>
+            <input type="file" id="file-input" accept=".pdf,.csv,.txt,.docx" hidden />
+          </div>
+          <div id="upload-status" class="upload-status hidden"></div>
+        </div>
+
+        <!-- Demo document hint -->
+        <div class="demo-hint">
+          <span class="demo-hint-icon">💡</span>
+          No document? Use the demo — paste company info directly in the question.
+          Example: <em>"Company: Nila Home. Product: Reusable kitchen storage starter kit. Unit cost: ₹180. Fixed cost: ₹45,000/month. Budget: ₹3 lakhs. Question: What price and channel should we launch with in India?"</em>
+        </div>
+
+        <!-- Question -->
+        <div class="form-group">
+          <label class="form-label">Strategic Question</label>
+          <textarea id="question-input" class="form-textarea" placeholder="e.g., Should we launch this product at ₹699 in India? What price and channel should we use? Which customer segment should we target?" rows="3"></textarea>
+        </div>
+
+        <button id="start-btn" class="btn btn-primary btn-lg" disabled>
+          <span class="btn-icon">▶</span>
+          Start Strategic Analysis
+        </button>
+      </div>
+    </section>
+
+    <!-- ── WORKSPACE (shown during analysis) ─────────────────────── -->
+    <section id="workspace" class="hidden">
+
+      <!-- TWIN PANEL -->
+      <div class="workspace-grid">
+
+        <aside class="sidebar" id="twin-sidebar">
+          <div class="sidebar-section">
+            <h3 class="sidebar-title">🧠 Digital Twin</h3>
+            <div id="twin-entities" class="twin-entities"></div>
+          </div>
+          <div class="sidebar-section">
+            <h3 class="sidebar-title">⚠️ Open Questions</h3>
+            <ul id="unknowns-list" class="unknowns-list"></ul>
+          </div>
+          <div class="sidebar-section">
+            <h3 class="sidebar-title">🔍 Evidence</h3>
+            <div id="evidence-list" class="evidence-list"></div>
+          </div>
+        </aside>
+
+        <div class="workspace-center">
+          <!-- Agent Timeline -->
+          <div class="timeline-card">
+            <div class="timeline-header">
+              <h2 class="timeline-title">Agent Activity</h2>
+              <div class="iteration-badge" id="iteration-badge">Iteration 0</div>
+            </div>
+            <div id="timeline" class="timeline"></div>
+          </div>
+
+          <!-- Hypotheses -->
+          <div class="hypotheses-card hidden" id="hypotheses-card">
+            <h2 class="card-title">🧩 Strategic Hypotheses</h2>
+            <div id="hypotheses-grid" class="hypotheses-grid"></div>
+          </div>
+
+          <!-- Simulation Chart -->
+          <div class="simulation-card hidden" id="simulation-card">
+            <h2 class="card-title">📊 Simulation Results</h2>
+            <div id="simulation-table" class="simulation-table"></div>
+          </div>
+
+          <!-- Adversarial Findings -->
+          <div class="devil-card hidden" id="devil-card">
+            <h2 class="card-title">🔥 Adversarial Challenge</h2>
+            <div id="challenges-list" class="challenges-list"></div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- FINAL DECISION (full width) -->
+      <section id="decision-section" class="decision-section hidden">
+        <div class="decision-header">
+          <h2 class="decision-title">📋 Final Strategic Decision</h2>
+          <div class="decision-meta" id="decision-meta"></div>
+        </div>
+        <div class="decision-body">
+          <div class="decision-recommendation" id="decision-recommendation"></div>
+          <div class="decision-grid">
+            <div class="decision-col">
+              <h3>Supporting Evidence</h3>
+              <ul id="supporting-ev" class="ev-list ev-support"></ul>
+            </div>
+            <div class="decision-col">
+              <h3>Counter Evidence</h3>
+              <ul id="counter-ev" class="ev-list ev-counter"></ul>
+            </div>
+          </div>
+          <div class="decision-grid">
+            <div class="decision-col">
+              <h3>Key Assumptions</h3>
+              <ul id="assumptions-list" class="tagged-list"></ul>
+            </div>
+            <div class="decision-col">
+              <h3>What Would Change This?</h3>
+              <ul id="change-list" class="tagged-list tagged-change"></ul>
+            </div>
+          </div>
+          <div class="decision-grid">
+            <div class="decision-col">
+              <h3>Risks</h3>
+              <ul id="risks-list" class="tagged-list tagged-risk"></ul>
+            </div>
+            <div class="decision-col">
+              <h3>Bias Disclosures</h3>
+              <ul id="bias-list" class="tagged-list tagged-bias"></ul>
+            </div>
+          </div>
+          <div class="experiment-box" id="experiment-box"></div>
+          <div class="evolution-box" id="evolution-box"></div>
+          <div class="open-questions-box" id="open-questions-box"></div>
+        </div>
+      </section>
+
+    </section><!-- /workspace -->
+
+  </main>
+
+  <!-- EVIDENCE DRAWER -->
+  <div id="evidence-drawer" class="drawer hidden">
+    <div class="drawer-header">
+      <h3>Evidence Detail</h3>
+      <button class="drawer-close" id="drawer-close">✕</button>
+    </div>
+    <div id="drawer-content" class="drawer-content"></div>
+  </div>
+  <div id="drawer-overlay" class="drawer-overlay hidden"></div>
+
+  <script src="/static/main.js"></script>
+</body>
+</html>

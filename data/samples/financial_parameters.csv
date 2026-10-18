@@ -1,0 +1,12 @@
+parameter,value,unit,notes
+company_name,Nila Home Products,string,Early-stage D2C brand Bengaluru
+product_name,AeroLock Modular Kitchen Storage Kit,string,4-piece airtight food-grade container set
+unit_cost_inr,180,INR,Manufacturing COGS per kit including packaging
+fixed_cost_inr,45000,INR,Monthly fixed overhead and warehousing
+base_demand,1200,units/month,Estimated baseline monthly demand at reference price
+cash_available_inr,300000,INR,Total launch budget allocation
+target_margin_pct,40,percent,Minimum gross margin threshold
+cac_inr,280,INR,Estimated baseline customer acquisition cost on digital channels
+competitor_price_inr,549,INR,Cello Modular benchmark price
+elasticity,-1.2,ratio,Estimated mass-market price elasticity for Tier-2
+regulatory_standard,IS 10146,string,BIS food grade plastics certification required
