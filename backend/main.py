@@ -249,6 +249,7 @@ if __name__ == "__main__":
         "main:app",
         host="0.0.0.0",
         port=settings.port,
+        app_dir=str(Path(__file__).resolve().parent),
         reload=False,
         log_level="info",
     )
