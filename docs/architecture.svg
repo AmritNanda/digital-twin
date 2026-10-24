@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="330" viewBox="0 0 1120 330" fill="none" role="img" aria-labelledby="title desc">
+  <title id="title">Kairo decision workflow</title>
+  <desc id="desc">Company context and a decision question flow through understanding, research, strategy, simulation, and adversarial review to an evidence-backed decision.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1120" y2="330" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F7F8F5"/><stop offset="1" stop-color="#EDF2EF"/>
+    </linearGradient>
+    <linearGradient id="final" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#174F46"/><stop offset="1" stop-color="#287568"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-30%" width="140%" height="170%">
+      <feDropShadow dx="0" dy="5" stdDeviation="7" flood-color="#1B332C" flood-opacity=".08"/>
+    </filter>
+    <style>
+      .label{font:600 11px ui-sans-serif,system-ui,sans-serif;letter-spacing:1.35px;fill:#6D7B75}
+      .title{font:650 15px ui-sans-serif,system-ui,sans-serif;fill:#172A24}
+      .sub{font:12px ui-sans-serif,system-ui,sans-serif;fill:#65736D}
+      .white{fill:#fff}.whiteSub{fill:#D2E5DE}
+      .arrow{stroke:#9BAAA3;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+    </style>
+  </defs>
+  <rect width="1120" height="330" rx="22" fill="url(#bg)"/>
+  <text x="40" y="42" class="label">FROM COMPANY CONTEXT TO A REVIEWABLE DECISION</text>
+  <g filter="url(#shadow)">
+    <rect x="40" y="92" width="150" height="132" rx="15" fill="#fff"/>
+    <rect x="218" y="92" width="150" height="132" rx="15" fill="#fff"/>
+    <rect x="396" y="92" width="150" height="132" rx="15" fill="#fff"/>
+    <rect x="574" y="92" width="150" height="132" rx="15" fill="#fff"/>
+    <rect x="752" y="92" width="150" height="132" rx="15" fill="#fff"/>
+    <rect x="930" y="92" width="150" height="132" rx="15" fill="url(#final)"/>
+  </g>
+  <g class="arrow">
+    <path d="M194 158h16m-5-5 5 5-5 5"/><path d="M372 158h16m-5-5 5 5-5 5"/>
+    <path d="M550 158h16m-5-5 5 5-5 5"/><path d="M728 158h16m-5-5 5 5-5 5"/>
+    <path d="M906 158h16m-5-5 5 5-5 5"/>
+  </g>
+  <g>
+    <circle cx="66" cy="121" r="13" fill="#E8F1EC"/><text x="66" y="125" text-anchor="middle" font-size="12" fill="#287568">01</text>
+    <text x="58" y="161" class="title">Company context</text><text x="58" y="184" class="sub">Documents + question</text><text x="58" y="202" class="sub">Knowns and unknowns</text>
+    <circle cx="244" cy="121" r="13" fill="#E8F1EC"/><text x="244" y="125" text-anchor="middle" font-size="12" fill="#287568">02</text>
+    <text x="236" y="161" class="title">Understand</text><text x="236" y="184" class="sub">Extract facts</text><text x="236" y="202" class="sub">Link source passages</text>
+    <circle cx="422" cy="121" r="13" fill="#E8F1EC"/><text x="422" y="125" text-anchor="middle" font-size="12" fill="#287568">03</text>
+    <text x="414" y="161" class="title">Research</text><text x="414" y="184" class="sub">Close key gaps</text><text x="414" y="202" class="sub">Search or demo fixtures</text>
+    <circle cx="600" cy="121" r="13" fill="#E8F1EC"/><text x="600" y="125" text-anchor="middle" font-size="12" fill="#287568">04</text>
+    <text x="592" y="161" class="title">Compare options</text><text x="592" y="184" class="sub">Form strategies</text><text x="592" y="202" class="sub">Simulate uncertainty</text>
+    <circle cx="778" cy="121" r="13" fill="#E8F1EC"/><text x="778" y="125" text-anchor="middle" font-size="12" fill="#287568">05</text>
+    <text x="770" y="161" class="title">Challenge</text><text x="770" y="184" class="sub">Stress-test the lead</text><text x="770" y="202" class="sub">Review assumptions</text>
+    <circle cx="956" cy="121" r="13" fill="#FFFFFF" fill-opacity=".16"/><text x="956" y="125" text-anchor="middle" font-size="12" fill="#fff">06</text>
+    <text x="948" y="161" class="title white">Decision package</text><text x="948" y="184" class="sub whiteSub">Evidence + caveats</text><text x="948" y="202" class="sub whiteSub">Human-reviewed next steps</text>
+  </g>
+  <path d="M829 250v27H288v-27" stroke="#A8B7AF" stroke-width="1.5" stroke-dasharray="4 5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="m283 256 5-6 5 6" stroke="#A8B7AF" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="558" y="298" text-anchor="middle" class="label">NEW EVIDENCE OR A WEAK ASSUMPTION CAN SEND THE ANALYSIS BACK FOR ANOTHER PASS</text>
+</svg>
