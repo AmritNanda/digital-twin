@@ -1,0 +1,550 @@
+{
+  "fixture_only": true,
+  "note": "Independent structural examples, not a persisted connected graph or actual approvals/results.",
+  "artifacts": [
+    {
+      "artifact_type": "ClaimProposal",
+      "schema_version": "1.0",
+      "id": "11111111-1111-4111-8111-111111111111",
+      "revision": 1,
+      "tenant_id": "11111111-1111-4111-8111-111111111111",
+      "case_id": "11111111-1111-4111-8111-111111111111",
+      "origin": "FIXTURE",
+      "created_at": "2026-10-24T00:00:00Z",
+      "snapshot_ref": {
+        "kind": "snapshot",
+        "id": "11111111-1111-4111-8111-111111111111",
+        "revision": 1
+      },
+      "subject_ref": {
+        "kind": "entity",
+        "id": "11111111-1111-4111-8111-111111111111",
+        "revision": 1
+      },
+      "predicate": "has_listed_price",
+      "proposition": "The fictional offer lists INR 699 net of tax.",
+      "value": {
+        "type": "DECIMAL",
+        "value": "699.00",
+        "unit": "INR/unit",
+        "currency": "INR",
+        "tax_basis": "NET"
+      },
+      "scope": {
+        "organization_refs": [
+          {
+            "kind": "entity",
+            "id": "11111111-1111-4111-8111-111111111111",
+            "revision": 1
+          }
+        ],
+        "entity_refs": [],
+        "geographies": [
+          "fictional test geography"
+        ],
+        "populations": [
+          "fixture cohort"
+        ],
+        "channels": [],
+        "valid_from": null,
+        "valid_to": null
+      },
+      "epistemic_state": "KNOWN",
+      "review_state": "PROPOSED",
+      "material": true,
+      "evidence_refs": [
+        {
+          "kind": "evidence_span",
+          "id": "11111111-1111-4111-8111-111111111111",
+          "revision": 1
+        }
+      ],
+      "derivation_refs": [],
+      "assumption_refs": [],
+      "competing_claim_refs": []
+    },
+    {
+      "artifact_type": "ParameterProposal",
+      "schema_version": "1.0",
+      "id": "11111111-1111-4111-8111-111111111111",
+      "revision": 1,
+      "tenant_id": "11111111-1111-4111-8111-111111111111",
+      "case_id": "11111111-1111-4111-8111-111111111111",
+      "origin": "FIXTURE",
+      "created_at": "2026-10-24T00:00:00Z",
+      "snapshot_ref": {
+        "kind": "snapshot",
+        "id": "11111111-1111-4111-8111-111111111111",
+        "revision": 1
+      },
+      "model_ref": {
+        "kind": "model",
+        "id": "11111111-1111-4111-8111-111111111111",
+        "revision": 1
+      },
+      "parameter_key": "acquisition_cost",
+      "scope": {
+        "organization_refs": [
+          {
+            "kind": "entity",
+            "id": "11111111-1111-4111-8111-111111111111",
+            "revision": 1
+          }
+        ],
+        "entity_refs": [],
+        "geographies": [
+          "fictional test geography"
+        ],
+        "populations": [
+          "fixture cohort"
+        ],
+        "channels": [],
+        "valid_from": null,
+        "valid_to": null
+      },
+      "unit": "INR/new_customer",
+      "currency": "INR",
+      "distribution": {
+        "family": "POINT",
+        "value": 140
+      },
+      "uncertainty_type": "SCENARIO",
+      "basis": "SCENARIO_ASSUMPTION",
+      "claim_refs": [],
+      "dataset_refs": [],
+      "assumption_refs": [
+        {
+          "kind": "assumption",
+          "id": "11111111-1111-4111-8111-111111111111",
+          "revision": 1
+        }
+      ],
+      "derivation_refs": [],
+      "dependency_refs": [],
+      "applicability_limits": [
+        "Fictional single-order-per-customer fixture only"
+      ],
+      "review_state": "PROPOSED"
+    },
+    {
+      "artifact_type": "TaskRequest",
+      "schema_version": "1.0",
+      "id": "11111111-1111-4111-8111-111111111111",
+      "revision": 1,
+      "tenant_id": "11111111-1111-4111-8111-111111111111",
+      "case_id": "11111111-1111-4111-8111-111111111111",
+      "origin": "FIXTURE",
+      "created_at": "2026-10-24T00:00:00Z",
+      "snapshot_ref": {
+        "kind": "snapshot",
+        "id": "11111111-1111-4111-8111-111111111111",
+        "revision": 1
+      },
+      "capability_id": "A03",
+      "template_version": "1.0",
+      "investigation_id": "11111111-1111-4111-8111-111111111111",
+      "purpose": "Inspect a fictional competitor offer.",
+      "completion_test": "Return a price span with tax and date scope.",
+      "requested_output_type": "ClaimProposal",
+      "input_refs": [
+        {
+          "kind": "source_version",
+          "id": "11111111-1111-4111-8111-111111111111",
+          "revision": 1
+        }
+      ],
+      "dependency_refs": [],
+      "parent_task_ref": null,
+      "policy_ref": {
+        "kind": "policy",
+        "id": "11111111-1111-4111-8111-111111111111",
+        "revision": 1
+      },
+      "deadline": "2026-10-24T01:00:00Z",
+      "delegation_depth": 0,
+      "status": "PROPOSED"
+    },
+    {
+      "artifact_type": "AgentResult",
+      "schema_version": "1.0",
+      "id": "11111111-1111-4111-8111-111111111111",
+      "revision": 1,
+      "tenant_id": "11111111-1111-4111-8111-111111111111",
+      "case_id": "11111111-1111-4111-8111-111111111111",
+      "origin": "FIXTURE",
+      "created_at": "2026-10-24T00:00:00Z",
+      "snapshot_ref": {
+        "kind": "snapshot",
+        "id": "11111111-1111-4111-8111-111111111111",
+        "revision": 1
+      },
+      "task_id": "11111111-1111-4111-8111-111111111111",
+      "instance_id": "22222222-2222-4222-8222-222222222222",
+      "status": "SUCCEEDED",
+      "artifact_refs": [
+        {
+          "kind": "claim",
+          "id": "11111111-1111-4111-8111-111111111111",
+          "revision": 1
+        }
+      ],
+      "claim_refs": [
+        {
+          "kind": "claim",
+          "id": "11111111-1111-4111-8111-111111111111",
+          "revision": 1
+        }
+      ],
+      "evidence_refs": [
+        {
+          "kind": "evidence_span",
+          "id": "11111111-1111-4111-8111-111111111111",
+          "revision": 1
+        }
+      ],
+      "assumption_refs": [],
+      "unresolved_issues": [],
+      "requested_tasks": [],
+      "concise_rationale": "Fixture span was extracted for review.",
+      "usage_ref": {
+        "kind": "usage",
+        "id": "11111111-1111-4111-8111-111111111111",
+        "revision": 1
+      },
+      "stop_reason": null
+    },
+    {
+      "artifact_type": "EventEnvelope",
+      "schema_version": "1.0",
+      "id": "11111111-1111-4111-8111-111111111111",
+      "revision": 1,
+      "tenant_id": "11111111-1111-4111-8111-111111111111",
+      "case_id": "11111111-1111-4111-8111-111111111111",
+      "origin": "FIXTURE",
+      "created_at": "2026-10-24T00:00:00Z",
+      "snapshot_ref": {
+        "kind": "snapshot",
+        "id": "11111111-1111-4111-8111-111111111111",
+        "revision": 1
+      },
+      "event_id": "11111111-1111-4111-8111-111111111111",
+      "aggregate_id": "22222222-2222-4222-8222-222222222222",
+      "aggregate_revision": 2,
+      "event_type": "claim.accepted",
+      "occurred_at": "2026-10-24T00:00:00Z",
+      "recorded_at": "2026-10-24T00:00:01Z",
+      "correlation_id": "11111111-1111-4111-8111-111111111111",
+      "causation_id": null,
+      "actor_id": "22222222-2222-4222-8222-222222222222",
+      "payload_refs": [
+        {
+          "kind": "claim",
+          "id": "11111111-1111-4111-8111-111111111111",
+          "revision": 1
+        }
+      ]
+    },
+    {
+      "artifact_type": "Challenge",
+      "schema_version": "1.0",
+      "id": "11111111-1111-4111-8111-111111111111",
+      "revision": 1,
+      "tenant_id": "11111111-1111-4111-8111-111111111111",
+      "case_id": "11111111-1111-4111-8111-111111111111",
+      "origin": "FIXTURE",
+      "created_at": "2026-10-24T00:00:00Z",
+      "snapshot_ref": {
+        "kind": "snapshot",
+        "id": "11111111-1111-4111-8111-111111111111",
+        "revision": 1
+      },
+      "target_refs": [
+        {
+          "kind": "strategy",
+          "id": "11111111-1111-4111-8111-111111111111",
+          "revision": 1
+        }
+      ],
+      "failure_proposition": "Higher CAC can reverse profit.",
+      "material": true,
+      "severity": "HIGH",
+      "test_plan": "Evaluate CAC 196 with fixed acquired units.",
+      "reversal_criterion": "Profit is negative.",
+      "evidence_refs": [],
+      "status": "OPEN",
+      "resolution_refs": []
+    },
+    {
+      "artifact_type": "ScenarioPatch",
+      "schema_version": "1.0",
+      "id": "11111111-1111-4111-8111-111111111111",
+      "revision": 1,
+      "tenant_id": "11111111-1111-4111-8111-111111111111",
+      "case_id": "11111111-1111-4111-8111-111111111111",
+      "origin": "FIXTURE",
+      "created_at": "2026-10-24T00:00:00Z",
+      "snapshot_ref": {
+        "kind": "snapshot",
+        "id": "11111111-1111-4111-8111-111111111111",
+        "revision": 1
+      },
+      "semantic_type": "SENSITIVITY",
+      "patches": [
+        {
+          "parameter_key": "acquisition_cost",
+          "distribution": {
+            "family": "POINT",
+            "value": 196
+          },
+          "unit": "INR/new_customer",
+          "rationale": "Fictional stress assumption.",
+          "evidence_refs": [],
+          "assumption_refs": [
+            {
+              "kind": "assumption",
+              "id": "11111111-1111-4111-8111-111111111111",
+              "revision": 1
+            }
+          ]
+        }
+      ],
+      "model_ref": {
+        "kind": "model",
+        "id": "11111111-1111-4111-8111-111111111111",
+        "revision": 1
+      },
+      "held_constant_refs": [
+        {
+          "kind": "parameter",
+          "id": "11111111-1111-4111-8111-111111111111",
+          "revision": 1
+        }
+      ],
+      "identification_review_ref": null
+    },
+    {
+      "artifact_type": "SimulationResult",
+      "schema_version": "1.0",
+      "id": "11111111-1111-4111-8111-111111111111",
+      "revision": 1,
+      "tenant_id": "11111111-1111-4111-8111-111111111111",
+      "case_id": "11111111-1111-4111-8111-111111111111",
+      "origin": "FIXTURE",
+      "created_at": "2026-10-24T00:00:00Z",
+      "snapshot_ref": {
+        "kind": "snapshot",
+        "id": "11111111-1111-4111-8111-111111111111",
+        "revision": 1
+      },
+      "strategy_refs": [
+        {
+          "kind": "strategy",
+          "id": "11111111-1111-4111-8111-111111111111",
+          "revision": 1
+        }
+      ],
+      "model_refs": [
+        {
+          "kind": "model",
+          "id": "11111111-1111-4111-8111-111111111111",
+          "revision": 1
+        }
+      ],
+      "parameter_refs": [
+        {
+          "kind": "parameter",
+          "id": "11111111-1111-4111-8111-111111111111",
+          "revision": 1
+        }
+      ],
+      "manifest_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "seed": 7,
+      "rng_version": "fixture-deterministic-v1",
+      "environment_ref": "fixture-only",
+      "draw_count": 1,
+      "invalid_draw_count": 0,
+      "horizon_days": 90,
+      "metrics_by_strategy": [
+        {
+          "strategy_ref": {
+            "kind": "strategy",
+            "id": "11111111-1111-4111-8111-111111111111",
+            "revision": 1
+          },
+          "feasible": true,
+          "violations": [],
+          "metrics": [
+            {
+              "key": "profit",
+              "value": 26727,
+              "unit": "INR",
+              "currency": "INR",
+              "availability": "AVAILABLE",
+              "reason": null
+            }
+          ]
+        }
+      ],
+      "output_object_hashes": [],
+      "conditionality": "Conditional fictional inputs; not a market forecast.",
+      "status": "SUCCEEDED",
+      "diagnostics": []
+    },
+    {
+      "artifact_type": "DecisionProposal",
+      "schema_version": "1.0",
+      "id": "11111111-1111-4111-8111-111111111111",
+      "revision": 1,
+      "tenant_id": "11111111-1111-4111-8111-111111111111",
+      "case_id": "11111111-1111-4111-8111-111111111111",
+      "origin": "FIXTURE",
+      "created_at": "2026-10-24T00:00:00Z",
+      "snapshot_ref": {
+        "kind": "snapshot",
+        "id": "11111111-1111-4111-8111-111111111111",
+        "revision": 1
+      },
+      "outcome": "CONDITIONAL",
+      "selected_strategy_ref": {
+        "kind": "strategy",
+        "id": "11111111-1111-4111-8111-111111111111",
+        "revision": 1
+      },
+      "alternative_refs": [],
+      "result_refs": [
+        {
+          "kind": "simulation",
+          "id": "11111111-1111-4111-8111-111111111111",
+          "revision": 1
+        }
+      ],
+      "objective_ref": {
+        "kind": "requirement",
+        "id": "11111111-1111-4111-8111-111111111111",
+        "revision": 1
+      },
+      "constraint_refs": [],
+      "claim_refs": [],
+      "assumption_refs": [
+        {
+          "kind": "assumption",
+          "id": "11111111-1111-4111-8111-111111111111",
+          "revision": 1
+        }
+      ],
+      "challenge_refs": [
+        {
+          "kind": "challenge",
+          "id": "11111111-1111-4111-8111-111111111111",
+          "revision": 1
+        }
+      ],
+      "verification_refs": [],
+      "experiment_refs": [],
+      "summary": "Fictional positive contribution scenario requires further demand evidence.",
+      "conditions": [
+        "Obtain actual eligible customer response data."
+      ],
+      "unresolved_issues": [
+        "Demand is not identified."
+      ],
+      "confidence_dimensions": {
+        "evidence": "fixture only",
+        "parameter": "assumed",
+        "model_validation": "SCENARIO_ONLY",
+        "numerical": "deterministic accounting fixture",
+        "robustness": "sensitive to CAC"
+      },
+      "reversal_conditions": [
+        "CAC exceeds the stated break-even threshold."
+      ],
+      "stop_reason": "MODEL_NOT_IDENTIFIED",
+      "status": "DRAFT"
+    },
+    {
+      "artifact_type": "ApprovalRecord",
+      "schema_version": "1.0",
+      "id": "11111111-1111-4111-8111-111111111111",
+      "revision": 1,
+      "tenant_id": "11111111-1111-4111-8111-111111111111",
+      "case_id": "11111111-1111-4111-8111-111111111111",
+      "origin": "FIXTURE",
+      "created_at": "2026-10-24T00:00:00Z",
+      "snapshot_ref": {
+        "kind": "snapshot",
+        "id": "11111111-1111-4111-8111-111111111111",
+        "revision": 1
+      },
+      "approval_type": "ASSUMPTION_USE",
+      "subject_ref": {
+        "kind": "assumption",
+        "id": "11111111-1111-4111-8111-111111111111",
+        "revision": 1
+      },
+      "payload_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "reviewer_id": "22222222-2222-4222-8222-222222222222",
+      "policy_ref": {
+        "kind": "policy",
+        "id": "11111111-1111-4111-8111-111111111111",
+        "revision": 1
+      },
+      "scope_description": "Fictional scenario only; no external effects.",
+      "expires_at": "2026-10-25T00:00:00Z",
+      "revoked_at": null,
+      "currency": null,
+      "max_minor_units": null,
+      "allowed_attempts": 1,
+      "destination_refs": [],
+      "status": "APPROVED"
+    },
+    {
+      "artifact_type": "VerificationReport",
+      "schema_version": "1.0",
+      "id": "11111111-1111-4111-8111-111111111111",
+      "revision": 1,
+      "tenant_id": "11111111-1111-4111-8111-111111111111",
+      "case_id": "11111111-1111-4111-8111-111111111111",
+      "origin": "FIXTURE",
+      "created_at": "2026-10-24T00:00:00Z",
+      "snapshot_ref": {
+        "kind": "snapshot",
+        "id": "11111111-1111-4111-8111-111111111111",
+        "revision": 1
+      },
+      "subject_ref": {
+        "kind": "decision",
+        "id": "11111111-1111-4111-8111-111111111111",
+        "revision": 1
+      },
+      "check_suite_version": "fixture-v1",
+      "checks": [
+        {
+          "check_id": "grounding",
+          "mandatory": true,
+          "outcome": "FAIL",
+          "affected_refs": [
+            {
+              "kind": "claim",
+              "id": "11111111-1111-4111-8111-111111111111",
+              "revision": 1
+            }
+          ],
+          "diagnostic": "Illustrative failure: live evidence unavailable."
+        }
+      ],
+      "blockers": [
+        "Live evidence unavailable"
+      ],
+      "reviewer_refs": [
+        {
+          "kind": "review",
+          "id": "11111111-1111-4111-8111-111111111111",
+          "revision": 1
+        }
+      ],
+      "allowed_outcomes": [
+        "ABSTAIN"
+      ]
+    }
+  ]
+}

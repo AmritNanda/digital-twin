@@ -120,7 +120,7 @@ async function startAnalysis() {
     const res = await fetch(`${API}/api/case`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ doc_id: state.docId, question }),
+      body: JSON.stringify({ doc_id: state.docId, question, ...(window.getOperatingContext ? window.getOperatingContext() : {}) }),
     });
     const data = await res.json();
     if (res.ok && data.case_id) {

@@ -39,7 +39,41 @@
         </p>
       </div>
 
+      <!-- Requirements guide: what to put in the document (loaded from /api/requirements) -->
+      <section class="req-guide" id="req-guide" aria-labelledby="req-title">
+        <h2 id="req-title" class="req-title">What to include in your document or prompt</h2>
+        <p class="req-lead">The more of these you provide, the fewer assumptions the analysis has to make. Items marked <strong>Required</strong> block a definitive recommendation when missing. Unknown is never treated as zero.</p>
+        <div id="req-items" class="req-items" aria-live="polite">Loading checklist…</div>
+        <ul id="req-tips" class="req-tips"></ul>
+      </section>
+
       <div class="setup-form">
+        <!-- Operating context -->
+        <fieldset class="form-group ctx-group" id="ctx-group">
+          <legend class="form-label">Market, currency &amp; tax</legend>
+          <div class="ctx-grid">
+            <label class="ctx-field" for="ctx-country">Home country
+              <select id="ctx-country" class="form-select"></select>
+            </label>
+            <label class="ctx-field" for="ctx-currency">Currency (ISO code)
+              <input id="ctx-currency" class="form-input" maxlength="3" placeholder="USD" autocomplete="off" />
+            </label>
+            <label class="ctx-field" for="ctx-tax-basis">Are your prices &amp; costs…
+              <select id="ctx-tax-basis" class="form-select">
+                <option value="">Use country default</option>
+                <option value="NET">Excluding tax (net)</option>
+                <option value="GROSS">Including tax (gross)</option>
+                <option value="NOT_APPLICABLE">No tax applies</option>
+                <option value="UNKNOWN">I don't know</option>
+              </select>
+            </label>
+          </div>
+          <label class="ctx-field ctx-notes" for="ctx-tax-notes">Tax notes (optional: rates, state/province, exemptions)
+            <input id="ctx-tax-notes" class="form-input" maxlength="500" placeholder="e.g., California, 8.5% combined sales tax" autocomplete="off" />
+          </label>
+          <p id="ctx-hint" class="ctx-hint"></p>
+        </fieldset>
+
         <!-- Upload -->
         <div class="form-group" id="upload-group">
           <label class="form-label">Company Document</label>
@@ -59,13 +93,14 @@
         <div class="demo-hint">
           <span class="demo-hint-icon">💡</span>
           No document? Use the demo — paste company info directly in the question.
-          Example: <em>"Company: Nila Home. Product: Reusable kitchen storage starter kit. Unit cost: ₹180. Fixed cost: ₹45,000/month. Budget: ₹3 lakhs. Question: What price and channel should we launch with in India?"</em>
+          Example: <em>"Company: Nila Home. Product: Reusable kitchen storage starter kit. Unit cost: $8. Fixed cost: $12,000/month. Budget: $30,000. Question: What price and channel should we launch with in the United States?"</em>
         </div>
 
         <!-- Question -->
         <div class="form-group">
           <label class="form-label">Strategic Question</label>
-          <textarea id="question-input" class="form-textarea" placeholder="e.g., Should we launch this product at ₹699 in India? What price and channel should we use? Which customer segment should we target?" rows="3"></textarea>
+          <textarea id="question-input" class="form-textarea" placeholder="e.g., What launch price and channel should we use? Which customer segment should we target?" rows="3"></textarea>
+          <div id="req-live" class="req-live" aria-live="polite"></div>
         </div>
 
         <button id="start-btn" class="btn btn-primary btn-lg" disabled>
@@ -186,5 +221,6 @@
   <div id="drawer-overlay" class="drawer-overlay hidden"></div>
 
   <script src="/static/main.js"></script>
+  <script src="/static/requirements.js"></script>
 </body>
 </html>

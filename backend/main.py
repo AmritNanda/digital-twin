@@ -19,6 +19,9 @@ from pydantic import BaseModel
 from config import settings
 from rag.ingest import ingest_document, attach_document_to_case
 from agents.graph import run_case
+from dtp import capabilities as dtp_capabilities
+from dtp.jurisdiction import context_preamble, list_jurisdictions, resolve_context
+from dtp.requirements_guide import guide as requirements_guide, scan_text
 
 logging.basicConfig(
     level=logging.INFO,
@@ -71,6 +74,37 @@ def index():
 class CaseCreate(BaseModel):
     doc_id: Optional[str] = None
     question: str
+    # User-chosen operating context; omitted fields default to USA/USD and are flagged DEFAULTED.
+    country: Optional[str] = None
+    currency: Optional[str] = None
+    tax_basis: Optional[str] = None
+    tax_notes: Optional[str] = None
+
+
+class RequirementScan(BaseModel):
+    text: str
+
+
+@app.get("/api/requirements")
+def get_requirements():
+    """What details the document/prompt should contain (SRS-007/008)."""
+    return requirements_guide()
+
+
+@app.get("/api/jurisdictions")
+def get_jurisdictions():
+    return {"default": "US", "jurisdictions": list_jurisdictions()}
+
+
+@app.post("/api/requirements/check")
+def check_requirements(body: RequirementScan):
+    """Keyword heuristic only; extracts no facts."""
+    return scan_text(body.text[:200_000])
+
+
+@app.get("/api/capabilities")
+def get_capabilities():
+    return {"capabilities": dtp_capabilities.status()}
 
 
 # ── Endpoints ─────────────────────────────────────────────────────────────────
@@ -117,6 +151,11 @@ async def create_case(body: CaseCreate):
     question = body.question.strip()
     if len(question) < 10:
         raise HTTPException(400, "Please provide a more detailed strategic question.")
+    try:
+        op_ctx = resolve_context(body.country, body.currency, body.tax_basis, body.tax_notes)
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+    question = f"{context_preamble(op_ctx)}\n{question}"
     if not settings.llm_configured:
         raise HTTPException(
             400,
@@ -143,6 +182,7 @@ async def create_case(body: CaseCreate):
         "doc_id": body.doc_id,
         "status": "running",
         "result": None,
+        "operating_context": op_ctx,
     }
 
     # Launch workflow in background (keep a reference until it finishes)
@@ -150,7 +190,7 @@ async def create_case(body: CaseCreate):
     _tasks.add(task)
     task.add_done_callback(_tasks.discard)
 
-    return {"case_id": case_id, "status": "running"}
+    return {"case_id": case_id, "status": "running", "operating_context": op_ctx}
 
 
 async def _run_workflow(case_id: str, question: str, doc_id: Optional[str], q: asyncio.Queue):
@@ -241,6 +281,80 @@ def health():
         "llm_model": settings.llm_model,
         "embedding_model": settings.embedding_model,
     }
+
+
+class SimulationApiRequest(BaseModel):
+    seed: int = 42
+    draw_count: int = 1000
+    price_mean: float = 699.0
+    price_std: float = 30.0
+    cogs_mean: float = 315.0
+    cogs_std: float = 15.0
+
+
+@app.post("/api/simulation/evaluate")
+def evaluate_simulation(req: SimulationApiRequest):
+    """Executes reproducible Monte Carlo simulation (SRS-035, AT-025)."""
+    from backend.dtp.numerical.simulation import (
+        DistributionSpec,
+        DistributionType,
+        MonteCarloSimulator,
+        SimulationPlan,
+    )
+    plan = SimulationPlan(
+        plan_id=f"sim-{uuid.uuid4().hex[:8]}",
+        seed=req.seed,
+        draw_count=req.draw_count,
+        distributions=[
+            DistributionSpec("price", DistributionType.NORMAL, {"mean": req.price_mean, "std": req.price_std}),
+            DistributionSpec("cogs", DistributionType.NORMAL, {"mean": req.cogs_mean, "std": req.cogs_std}),
+        ],
+    )
+    sim = MonteCarloSimulator(plan)
+    res = sim.run()
+    return res.to_dict()
+
+
+class CashFlowApiRequest(BaseModel):
+    initial_cash: float = 100000.0
+    unit_purchase_cost: float = 315.0
+    unit_selling_price: float = 699.0
+    units_per_period: int = 300
+    total_periods: int = 3
+
+
+@app.post("/api/cashflow/evaluate")
+def evaluate_cashflow(req: CashFlowApiRequest):
+    """Evaluates multi-period cash flow and liquidity (SRS-033, AT-024)."""
+    from decimal import Decimal
+    from backend.dtp.numerical.cashflow import CashFlowEngine, PeriodInput
+
+    periods_input = []
+    for p in range(req.total_periods):
+        periods_input.append(
+            PeriodInput(
+                period=p,
+                demand_units=req.units_per_period,
+                procurement_receipt_units=req.units_per_period * req.total_periods if p == 0 else 0,
+                procurement_order_units=req.units_per_period * req.total_periods if p == 0 else 0,
+                unit_purchase_cost=Decimal(str(req.unit_purchase_cost)),
+                unit_selling_price=Decimal(str(req.unit_selling_price)),
+                unit_cogs=Decimal(str(req.unit_purchase_cost)),
+                unit_fulfillment=Decimal("60.00"),
+                payment_fee_rate=Decimal("0.03"),
+                acquisition_cost_per_unit=Decimal("140.00"),
+                fixed_operating_costs=Decimal("40000.00"),
+            )
+        )
+
+    engine = CashFlowEngine(
+        currency="USD",
+        initial_cash=Decimal(str(req.initial_cash)),
+        initial_inventory=0,
+        min_cash_reserve=Decimal("10000.00"),
+    )
+    res = engine.run(periods_input)
+    return res.to_dict()
 
 
 if __name__ == "__main__":

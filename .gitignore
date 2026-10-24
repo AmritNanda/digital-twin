@@ -1,7 +1,14 @@
 # Environment & secrets
 .env
+.env.*
 *.env
 !.env.example
+*.pem
+*.key
+secrets/
+logs/
+*.log
+data/objects/
 
 # Python cache & artifacts
 __pycache__/

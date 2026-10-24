@@ -1,0 +1,22 @@
+# Local development PostgreSQL (SRS-003/016). pgvector image for the later retrieval stage.
+# Passwords come from the untracked .env (see .env.example); no defaults are embedded here.
+services:
+  postgres:
+    image: pgvector/pgvector:pg17
+    container_name: dtp-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: twin_owner
+      POSTGRES_PASSWORD: ${POSTGRES_OWNER_PASSWORD:?set POSTGRES_OWNER_PASSWORD in .env}
+      POSTGRES_DB: twin
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-5433}:5432"
+    volumes:
+      - dtp_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U twin_owner -d twin"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+volumes:
+  dtp_pg_data:

@@ -1,0 +1,78 @@
+{
+  "package": "Agentic Company and Market Decision Twin \u2014 Full System Specifications and Coding Prompt",
+  "version": "1.1",
+  "date": "2026-10-24",
+  "scope": "Entire system; no MVP substitute",
+  "files": [
+    {
+      "path": "AGENT_SPECIFICATIONS.md",
+      "bytes": 37899,
+      "sha256": "488a75581f7598fdafef81debd531ff65978ec9152b878e7f46df590c13a4b51"
+    },
+    {
+      "path": "AI_IMPLEMENTATION_CONTRACT.md",
+      "bytes": 8841,
+      "sha256": "230f51fe6d02a2265124130ef4000b65baee01c7506d722f8bca01717a567246"
+    },
+    {
+      "path": "ARCHITECTURE_AND_DATA_CONTRACTS.md",
+      "bytes": 16487,
+      "sha256": "3e177a7c00750d8dfeb39e2479fdc20adee488f557296f05b40bd165901069f2"
+    },
+    {
+      "path": "contracts/core.schema.json",
+      "bytes": 53947,
+      "sha256": "1d957099cf18d8570ca7685aa254065a1176bcf05a4d1f8dec92f818ee365a0c"
+    },
+    {
+      "path": "contracts/examples.json",
+      "bytes": 16829,
+      "sha256": "f22d7522044dcbacc759534761054b350cc36498d9cae3c9224139b29d7bee39"
+    },
+    {
+      "path": "contracts/README.md",
+      "bytes": 6114,
+      "sha256": "270695b56003d747e613fc6588b258a59962a74e66c437c2e187cdb1d3dba515"
+    },
+    {
+      "path": "MEGA_BUILD_PROMPT.md",
+      "bytes": 21163,
+      "sha256": "463465bc1f35cb697ea9a8458781741844cd40025e6bc225407a1ff14a44f5ce"
+    },
+    {
+      "path": "PRD.md",
+      "bytes": 45214,
+      "sha256": "c9bec6f622b838b798a82c2a8778cc4420a77d1cb0323531b21b0f22b85c6f49"
+    },
+    {
+      "path": "README.md",
+      "bytes": 6133,
+      "sha256": "65c2b6422992d7ad57fcd03eeb9a5f6575a8b9f396ba2e0e5e18059003804daf"
+    },
+    {
+      "path": "SPECIFICATION_VALIDATION.md",
+      "bytes": 3918,
+      "sha256": "2bf40d8d254dfdf1afde5ecac43da819e809d7202fe3e22fe262d9937ececa95"
+    },
+    {
+      "path": "SRS.md",
+      "bytes": 167270,
+      "sha256": "3a8d6c6b3687750f63f11677a0f19147b2a511b70ed928ef6b684f2fea64a176"
+    },
+    {
+      "path": "TRACEABILITY_AND_ACCEPTANCE.md",
+      "bytes": 15296,
+      "sha256": "c7fdf958e92a3dc4f35d945160c1b803944a6cb36385418e733343504ab49c68"
+    },
+    {
+      "path": "validation/README.md",
+      "bytes": 682,
+      "sha256": "df3540c7f830cee9b9539da0c76ce5df53c0d61e7e93b298347a0f1a343b8afa"
+    },
+    {
+      "path": "validation/validate_specification.py",
+      "bytes": 8655,
+      "sha256": "fd6b281ea8dac7937c83b2926d7689a55f33ed296884083bf1e2d7db98bfe6d2"
+    }
+  ]
+}
