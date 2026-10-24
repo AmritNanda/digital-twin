@@ -7,6 +7,7 @@ import json
 import logging
 import os
 import uuid
+from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Optional
 
@@ -19,6 +20,8 @@ from pydantic import BaseModel
 from config import settings
 from rag.ingest import ingest_document, attach_document_to_case
 from agents.graph import run_case
+from workspace_api import router as workspace_router
+from workspace_store import initialize as initialize_workspace
 
 logging.basicConfig(
     level=logging.INFO,
@@ -27,14 +30,22 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # ── App ───────────────────────────────────────────────────────────────────────
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    initialize_workspace()
+    yield
+
+
 app = FastAPI(
     title="Agentic Strategic Intelligence System",
     description="Autonomous strategic decision MVP",
     version="0.1.0",
+    lifespan=lifespan,
 )
+app.include_router(workspace_router)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[origin.strip() for origin in os.getenv("STRATEGY_CORS_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173").split(",") if origin.strip()],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -51,15 +62,21 @@ UPLOAD_DIR = Path(settings.upload_dir).resolve()
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
 PUBLIC_DIR = Path(__file__).parent.parent / "public"
+FRONTEND_DIST = Path(__file__).parent.parent / "frontend" / "dist"
 
 
 # ── Static files ──────────────────────────────────────────────────────────────
 if PUBLIC_DIR.exists():
     app.mount("/static", StaticFiles(directory=str(PUBLIC_DIR)), name="static")
+if (FRONTEND_DIST / "assets").exists():
+    app.mount("/assets", StaticFiles(directory=str(FRONTEND_DIST / "assets")), name="frontend-assets")
 
 
 @app.get("/")
 def index():
+    built_index = FRONTEND_DIST / "index.html"
+    if built_index.exists():
+        return FileResponse(str(built_index))
     index_file = PUBLIC_DIR / "index.html"
     if index_file.exists():
         return FileResponse(str(index_file))

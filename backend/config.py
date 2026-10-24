@@ -19,6 +19,9 @@ class Settings(BaseSettings):
     llm_api_key: str = ""
     llm_model: str = "gpt-4o-mini"
     llm_temperature: float = 0.3
+    llm_timeout_seconds: float = 45.0
+    llm_max_retries: int = 1
+    llm_reasoning_effort: str = "low"
 
     # Embeddings
     embedding_model: str = "all-MiniLM-L6-v2"

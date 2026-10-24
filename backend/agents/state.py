@@ -46,3 +46,5 @@ class CaseRunState(MessagesState):
 
     # Final result
     final_decision: Optional[dict]
+    approval: Optional[dict]
+    source_corrections: list[dict]
