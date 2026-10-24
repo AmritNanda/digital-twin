@@ -151,6 +151,34 @@ def _simulate_hypothesis(
     )
 
 
+def sensitivity_grid(twin: DigitalTwin) -> list[dict]:
+    """Compare option rankings across approved elasticity and CAC scenarios."""
+    if not twin.current_hypotheses():
+        return []
+    elasticity = _get_param(twin, "elasticity", -1.2)[0]
+    cac = _get_param(twin, "cac_inr", 300.0)[0]
+    points = []
+    for elasticity_factor in (0.75, 1.0, 1.25):
+        for cac_factor in (0.7, 1.0, 1.3):
+            scenario = twin.model_copy(deep=True)
+            scenario.primary_product().attributes.update({
+                "elasticity": elasticity * elasticity_factor,
+                "cac_inr": cac * cac_factor,
+            })
+            sims = []
+            for idx, hyp in enumerate(scenario.current_hypotheses()):
+                price = to_float(hyp.price, 699.0) or 699.0
+                sims.append(_simulate_hypothesis(scenario, hyp.id, price,
+                                                  hyp.channel or "d2c", default_rng(SEED_BASE + idx)))
+            leader = max(sims, key=lambda item: item.avg_profit)
+            points.append({"elasticity": elasticity * elasticity_factor,
+                           "cac_inr": cac * cac_factor,
+                           "leader_hypothesis_id": leader.hypothesis_id,
+                           "leader_avg_profit": leader.avg_profit,
+                           "options": {sim.hypothesis_id: sim.avg_profit for sim in sims}})
+    return points
+
+
 async def simulation_node(state: dict) -> dict:
     """LangGraph node: run Monte Carlo simulation for all active hypotheses."""
     twin_data = state.get("twin", {})

@@ -17,6 +17,7 @@ import logging
 import re
 from abc import ABC, abstractmethod
 from typing import Any, Optional
+from urllib.parse import urlsplit
 
 import openai
 from openai import AsyncOpenAI
@@ -85,14 +86,24 @@ class OpenAICompatibleProvider(LLMProvider):
         self.client = AsyncOpenAI(
             base_url=settings.llm_base_url,
             api_key=settings.llm_api_key or "not-needed",
-            timeout=90.0,
-            max_retries=2,
+            timeout=settings.llm_timeout_seconds,
+            max_retries=settings.llm_max_retries,
         )
         self.model = settings.llm_model
         self.temperature = settings.llm_temperature
+        self.is_gemini = (
+            urlsplit(settings.llm_base_url).hostname
+            == "generativelanguage.googleapis.com"
+        )
 
     def _temp(self, temperature: Optional[float]) -> float:
         return self.temperature if temperature is None else temperature
+
+    def _provider_options(self) -> dict[str, Any]:
+        """Return request options supported by the configured provider."""
+        if self.is_gemini:
+            return {"reasoning_effort": settings.llm_reasoning_effort}
+        return {}
 
     async def complete(self, system: str, user: str, temperature: Optional[float] = None) -> str:
         try:
@@ -103,6 +114,7 @@ class OpenAICompatibleProvider(LLMProvider):
                     {"role": "user", "content": user},
                 ],
                 temperature=self._temp(temperature),
+                **self._provider_options(),
             )
             return resp.choices[0].message.content or ""
         except _FATAL_ERRORS as e:
@@ -136,6 +148,7 @@ class OpenAICompatibleProvider(LLMProvider):
                 ],
                 temperature=self._temp(temperature),
                 response_format={"type": "json_object"},
+                **self._provider_options(),
             )
             content = resp.choices[0].message.content or "{}"
             result = _extract_json(content)

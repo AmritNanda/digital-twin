@@ -214,6 +214,9 @@ async def understand_node(state: dict) -> dict:
         "summary": f"Extracted {twin.entity_summary()}. Identified {len(unknowns)} unknowns.",
         "twin_summary": twin.entity_summary(),
         "unknowns": unknowns,
+        "used_passages": [{"doc_id": s.doc_id, "source": s.source,
+                            "excerpt": s.text[:240], "retrieval_method": s.retrieval_method}
+                           for s in spans],
     })
 
     return {

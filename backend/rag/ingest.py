@@ -162,7 +162,9 @@ def ingest_document(file_path: Path, case_id: str, source_name: str) -> dict:
     collection = get_collection(case_id)
 
     embeddings = embedder.encode(chunks, show_progress_bar=False).tolist()
-    doc_id = hashlib.sha256(text.encode()).hexdigest()[:16]
+    # A case can contain two files with identical text. Keep their chunks and
+    # provenance separate so removing either file only removes its own spans.
+    doc_id = hashlib.sha256(f"{source_name}\0{text}".encode()).hexdigest()[:16]
 
     ids = [f"{doc_id}_{i}" for i in range(len(chunks))]
     metadatas = [{"source": source_name, "chunk_index": i, "doc_id": doc_id} for i in range(len(chunks))]
