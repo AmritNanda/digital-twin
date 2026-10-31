@@ -28,7 +28,7 @@ from dtp.intake.storage import object_store
 
 
 @pytest.fixture()
-def intake_world():
+def intake_world(postgres_ready):
     tid, owner_id = repo.bootstrap_tenant("intake_t", f"o{time.time_ns()}@intake.test")
     owner = Principal(tid, owner_id, frozenset({Role.OWNER}))
     case = repo.create_case(owner, title="Intake Test Case", objective="Intake testing", horizon_days=30, origin="FIXTURE")

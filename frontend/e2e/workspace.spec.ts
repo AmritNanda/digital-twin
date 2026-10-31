@@ -2,6 +2,8 @@ import { expect, test } from '@playwright/test';
 
 test('document-led case reaches approval, result, and versioned export', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
+  const pageErrors: string[] = [];
+  page.on('pageerror', error => pageErrors.push(error.message));
   let signedIn = false;
   const caseId = 'case-e2e';
   const runId = 'run-e2e';
@@ -82,6 +84,7 @@ test('document-led case reaches approval, result, and versioned export', async (
   await expect(page.getByText('Provisional findings')).toBeVisible();
   await page.getByRole('button', { name: /Approve & run final simulation/ }).click();
   await expect(page.getByRole('heading', { name: 'Pilot retail first' })).toBeVisible();
+  expect(pageErrors).toEqual([]);
   await page.getByRole('button', { name: 'Export ↓' }).click();
   const download = page.waitForEvent('download');
   await page.getByRole('link', { name: /JSON/ }).click();

@@ -1,4 +1,4 @@
-"""LangGraph State Machine for Bounded Cyclic Strategic Decision Twin Workflow.
+"""Prototype LangGraph state machine for the Strategic Decision Twin.
 (SRS-026, PRD Complete Workflow).
 Coordinates:
 1. Intake & Assessment (A20 Planner)
@@ -20,7 +20,7 @@ from typing import Annotated, Any, TypedDict
 from langgraph.graph import END, StateGraph
 
 from dtp.identity import Principal, Role
-from dtp.orchestration.catalog import AgentOutput, dispatch_agent_capability
+from dtp.orchestration.catalog import dispatch_agent_capability
 
 
 class TwinExecutionState(TypedDict):
@@ -108,10 +108,9 @@ def node_adversarial_challenge(state: TwinExecutionState) -> dict[str, Any]:
 
 def node_verify_release(state: TwinExecutionState) -> dict[str, Any]:
     p = _service_principal(state["tenant_id"], "verification_service")
-    out = dispatch_agent_capability("A19", p, state["case_id"], {
-        "checks": [{"name": "accounting_reconciled", "result": "PASS", "mandatory": True}],
-    })
-    return {"verification_passed": out.status == "SUCCEEDED"}
+    # No verified draft or source lineage is produced by this workflow yet.
+    out = dispatch_agent_capability("A19", p, state["case_id"], {"checks": []})
+    return {"verification_passed": out.status == "SUCCEEDED", "unresolved_issues": out.unresolved_issues}
 
 
 def node_finalize_decision(state: TwinExecutionState) -> dict[str, Any]:
@@ -128,16 +127,15 @@ def node_finalize_decision(state: TwinExecutionState) -> dict[str, Any]:
     }
 
 
+def node_blocked(state: TwinExecutionState) -> dict[str, Any]:
+    return {"final_decision": {}, "stop_reason": "VERIFICATION_FAILED"}
+
+
 # ── Edge Routing Condition ───────────────────────────────────────────────────
 
 def should_replan_or_release(state: TwinExecutionState) -> str:
-    """Cyclic decision boundary: replan if major unresolved challenges exist and iterations remain."""
-    if state["iteration"] >= state["max_iterations"]:
-        return "finalize"
-    # If unverified or major challenge triggered, loop back to plan/intelligence
-    if not state.get("verification_passed", True):
-        return "replan"
-    return "finalize"
+    """Unverified work cannot reach the decision node."""
+    return "finalize" if state.get("verification_passed") else "blocked"
 
 
 # ── Workflow Graph Construction ──────────────────────────────────────────────
@@ -153,6 +151,7 @@ def build_twin_workflow() -> Any:
     workflow.add_node("challenge", node_adversarial_challenge)
     workflow.add_node("verify", node_verify_release)
     workflow.add_node("finalize", node_finalize_decision)
+    workflow.add_node("blocked", node_blocked)
 
     workflow.set_entry_point("plan")
     workflow.add_edge("plan", "intelligence")
@@ -166,10 +165,11 @@ def build_twin_workflow() -> Any:
         "verify",
         should_replan_or_release,
         {
-            "replan": "plan",
             "finalize": "finalize",
+            "blocked": "blocked",
         },
     )
     workflow.add_edge("finalize", END)
+    workflow.add_edge("blocked", END)
 
     return workflow.compile()

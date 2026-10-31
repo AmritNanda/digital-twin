@@ -9,7 +9,8 @@ type Proposal = { overrides: Record<string, number>; baseRunId: string };
 
 const money = (value?: number) => value === undefined ? '—' : new Intl.NumberFormat('en-IN', { maximumFractionDigits: 0 }).format(value);
 type EvidenceItem = NonNullable<DecisionResult['evidence']>[number];
-const sourceLabel = (source: string) => {
+const sourceLabel = (source?: string) => {
+  if (!source) return 'Source';
   try {
     const host = new URL(source).hostname.toLowerCase().replace(/^www\./, '');
     const brands: Record<string, string> = {
@@ -24,7 +25,8 @@ const sourceLabel = (source: string) => {
     return source.startsWith('document:') ? 'Company document' : source || 'Source';
   }
 };
-const sourceHref = (source: string) => {
+const sourceHref = (source?: string) => {
+  if (!source) return undefined;
   try {
     const url = new URL(source);
     return ['http:', 'https:'].includes(url.protocol) ? url.href : undefined;
@@ -91,6 +93,7 @@ export default function App() {
   const [proposal, setProposal] = useState<Proposal | null>(null);
   const [exportOpen, setExportOpen] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [chatPending, setChatPending] = useState(false);
   const [error, setError] = useState('');
 
   const refresh = useCallback(async (id: string) => {
@@ -238,7 +241,7 @@ export default function App() {
 
   const sendChat = async () => {
     if (!caseData || !chatText.trim() || busy) return;
-    setBusy(true); setError('');
+    setBusy(true); setChatPending(true); setError('');
     try {
       const response = await api.message(caseData.id, chatText.trim(), selectedRun?.id);
       setChatText(''); await refresh(caseData.id);
@@ -246,7 +249,7 @@ export default function App() {
         setProposal({ overrides: response.overrides, baseRunId: response.base_run_id });
       }
     } catch (cause) { setError(cause instanceof Error ? cause.message : 'Could not send message'); }
-    finally { setBusy(false); }
+    finally { setBusy(false); setChatPending(false); }
   };
 
   const confirmScenario = async () => {
@@ -263,7 +266,9 @@ export default function App() {
   const selectedEvent = displayedEvents.find(event => event.id === selectedEventId) || displayedEvents.at(-1);
   const completedRuns = (caseData?.runs || []).filter(run => run.status === 'completed');
   const selectedRun: RunRecord | undefined = completedRuns.find(run => run.id === selectedRunId) || completedRuns.at(-1);
-  const result = selectedRun?.result;
+  const ledgerFocused = ['running', 'preparing_source', 'awaiting_approval'].includes(caseData?.status || '');
+  const result = ledgerFocused ? undefined : selectedRun?.result;
+  const maxProfitMagnitude = Math.max(1, ...(result?.simulations || []).map(sim => Math.abs(sim.avg_profit)));
   const provisionalTwin = caseData?.status === 'awaiting_approval'
     ? caseData.runs.at(-1)?.twin as { simulations?: Simulation[]; challenges?: { id: string; weakness: string; severity: string; assumption_targeted: string }[] } | undefined
     : undefined;
@@ -273,11 +278,11 @@ export default function App() {
 
   return <div className="site" onDragOver={event => event.preventDefault()} onDrop={event => { event.preventDefault(); acceptFiles(Array.from(event.dataTransfer.files)); }}>
     {fileField}
-    <header className="site-header"><button className="wordmark" type="button" onClick={() => { setPhase('home'); setCaseData(null); localStorage.removeItem('strategy_case_id'); }}><span className="brand-symbol">◈</span> Strategy Twin</button><span className="header-subtitle">DECISION INTELLIGENCE</span><div className="header-right">{phase === 'workbench' && caseData && <button className="vault-button" type="button" onClick={() => setSourceOpen(true)}><span className="lock-glyph">▣</span> Private company twin <span className="mono">v{caseData.source_snapshot.version || 0}</span></button>}{user && <span className="account">{user.email}</span>}</div></header>
+    <header className="site-header"><button className="wordmark" type="button" onClick={() => { setPhase('home'); setCaseData(null); localStorage.removeItem('strategy_case_id'); }}><span className="brand-symbol">◈</span> Kairo</button><span className="header-subtitle">DECISION INTELLIGENCE</span><div className="header-right">{phase === 'workbench' && caseData && <button className="vault-button" type="button" onClick={() => setSourceOpen(true)}><span className="lock-glyph">▣</span> Private company twin <span className="mono">v{caseData.source_snapshot.version || 0}</span></button>}{user && <span className="account">{user.email}</span>}</div></header>
 
     <AnimatePresence mode="wait">
       {phase === 'home' && <motion.main key="home" className="home" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-        <div className="home-content"><p className="kicker">A DECISION STARTS WITH THE COMPANY</p><h1>Give your company a place to think.</h1><p className="home-copy">Bring the documents behind a decision. Strategy Twin builds the case, tests competing paths, and shows what changed its mind.</p>
+        <div className="home-content"><p className="kicker">A DECISION STARTS WITH THE COMPANY</p><h1>Give your company a place to think.</h1><p className="home-copy">Bring the documents behind a decision. Kairo builds the case, tests competing paths, and shows what changed its mind.</p>
           <div className="composer home-composer"><textarea aria-label="Strategic question" value={question} onChange={event => setQuestion(event.target.value)} onKeyDown={event => { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); start(); } }} placeholder="What decision are you facing? You can add this after your documents." rows={3} /><div className="composer-actions"><button className="upload-primary" type="button" onClick={uploadClick}>＋ &nbsp; Upload company documents</button><span className="upload-limit">PDF · DOCX · CSV · TXT · MD &nbsp; / &nbsp; 5 files, 20 MB each, 50 MB total</span><button className="send-button" type="button" onClick={() => start()} disabled={busy || uploading} aria-label="Start decision">↗</button></div></div>
           {(caseData?.documents.length || uploadItems.length > 0) && <div className="file-list">{caseData?.documents.map(doc => <span className="file-chip" key={doc.id}>{doc.filename} <small>{doc.chunks} passages</small><button type="button" aria-label={`Remove ${doc.filename}`} onClick={() => removeDocument(doc.id)}>×</button></span>)}{uploadItems.filter(item => item.status !== 'ready').map((item, index) => <span className={`file-chip ${item.status}`} key={`${item.name}-${index}`}>{item.name} <small>{item.detail || item.status}</small></span>)}</div>}
           <p className="privacy-note"><span>▣</span> Your case is private to your account. Relevant excerpts may be processed by the configured language model provider.</p>
@@ -292,14 +297,16 @@ export default function App() {
 
         {caseData.status === 'awaiting_question' && <section className="question-gate"><div className="eyebrow">SOURCE TWIN READY</div><h2>What decision should we test?</h2><p>The uploaded documents are indexed. Choose a question or write your own; simulations start only after you decide.</p><div className="suggestions">{caseData.source_snapshot.suggested_questions?.map(item => <button type="button" key={item} onClick={() => setQuestion(item)}>{item} ↗</button>)}</div><div className="composer"><textarea aria-label="Decision question" value={question} onChange={event => setQuestion(event.target.value)} onKeyDown={event => { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); start(); } }} placeholder="What decision should we test?" rows={2} /><div className="composer-actions"><span className="mono">ENTER TO ANALYZE · SHIFT+ENTER FOR NEW LINE</span><button className="send-button" type="button" onClick={() => start()} disabled={busy || question.trim().length < 10}>↗</button></div></div></section>}
 
-        {caseData.status !== 'awaiting_question' && <div className="workspace-grid"><div className="workspace-primary">
-          {result && <section className="decision-summary"><div className="section-top"><span className="eyebrow">DECISION / RUN {selectedRun?.version}</span><div className="run-actions"><select aria-label="Selected run version" value={selectedRun?.id || ''} onChange={event => setSelectedRunId(event.target.value)}>{completedRuns.map(run => <option key={run.id} value={run.id}>Run {run.version}</option>)}</select><div className="export-wrap"><button type="button" className="outline-action" onClick={() => setExportOpen(!exportOpen)}>Export ↓</button>{exportOpen && <div className="export-menu">{(['pdf', 'csv', 'json'] as const).map(format => <a key={format} href={`/api/cases/${caseData.id}/exports/${format}?run_id=${selectedRun?.id}`}>{format.toUpperCase()} <span>↗</span></a>)}</div>}</div></div></div><h2>{result.recommendation || 'Decision ready'}</h2><p>{result.rationale}</p>{result.fixture_data_present && <span className="fixture-disclosure">FIXTURE / DEMO EVIDENCE IN THIS RUN</span>}</section>}
+        {caseData.status !== 'awaiting_question' && <div className={`workspace-grid ${ledgerFocused ? 'ledger-focused' : ''}`}><div className="workspace-primary">
+          {result && <section className="decision-summary"><div className="section-top"><span className="eyebrow">DECISION / RUN {selectedRun?.version}</span><div className="run-actions"><select aria-label="Selected run version" value={selectedRun?.id || ''} onChange={event => setSelectedRunId(event.target.value)}>{completedRuns.map(run => <option key={run.id} value={run.id}>Run {run.version}</option>)}</select><div className="export-wrap"><button type="button" className="outline-action" onClick={() => setExportOpen(!exportOpen)}>Export ↓</button>{exportOpen && <div className="export-menu">{(['pdf', 'csv', 'json'] as const).map(format => <a key={format} href={`/api/cases/${caseData.id}/exports/${format}?run_id=${selectedRun?.id}`}>{format.toUpperCase()} <span>↗</span></a>)}</div>}</div></div></div><div className="recommendation-label">RECOMMENDED DIRECTION</div><p className="recommendation-copy">{result.recommendation || 'Decision ready'}</p>{result.rationale && <p className="rationale-copy">{result.rationale}</p>}{result.fixture_data_present && <span className="fixture-disclosure">FIXTURE / DEMO EVIDENCE IN THIS RUN</span>}</section>}
 
           {caseData.status === 'awaiting_approval' && <section className="approval-panel"><div className="eyebrow">HUMAN CHECKPOINT</div><h2>Review what the final run will assume.</h2><p>These are model inputs. Edit anything that should change, then approve the final simulation. The provisional run remains in the ledger.</p><div className="assumption-grid">{Object.entries(approvalValues).map(([key, value]) => <label key={key}><span>{key.replaceAll('_', ' ').replace(' inr', ' · INR')}</span><input type="number" step={key === 'elasticity' ? '.1' : '1'} value={value} onChange={event => setApprovalValues(previous => ({ ...previous, [key]: Number(event.target.value) }))} /></label>)}</div><button className="solid-action" type="button" onClick={approve} disabled={busy}>Approve & run final simulation ↗</button></section>}
 
           {provisionalTwin && <section className="results-block provisional"><div className="section-top"><h3>Provisional findings</h3><span className="eyebrow">BEFORE ASSUMPTION APPROVAL</span></div><p>These figures and challenges may change in the final run.</p>{provisionalTwin.simulations?.map(sim => <div className="provisional-row" key={sim.id || sim.hypothesis_id}><span>{sim.channel || sim.hypothesis_id}</span><strong>₹{money(sim.avg_profit)} expected</strong><small>P10 ₹{money(sim.p10_profit)} · P90 ₹{money(sim.p90_profit)}</small></div>)}{provisionalTwin.challenges?.map(item => <p key={item.id}><span className="eyebrow">{item.severity} / {item.assumption_targeted}</span><br />{item.weakness}</p>)}</section>}
 
           {!result && ['running', 'preparing_source'].includes(caseData.status) && <section className="working-status"><div className="eyebrow">{caseData.status === 'preparing_source' ? 'SOURCE PREPARATION' : 'ANALYSIS IN PROGRESS'}</div><h2>{caseData.status === 'preparing_source' ? 'Reading the company documents.' : 'Building the working twin.'}</h2><p>Each completed step appears in the ledger with its actual inputs and outputs.</p><div className="working-rule"><span /></div></section>}
+
+          {result?.simulations && <section className="results-block"><div className="section-top"><h3>Profit outlook</h3><span className="eyebrow">EXPECTED MONTHLY PROFIT · INR</span></div><div className="profit-chart" role="img" aria-label="Expected monthly profit comparison; positive bars extend right and negative bars extend left from zero.">{[...result.simulations].sort((a, b) => b.avg_profit - a.avg_profit).map(sim => { const hypothesis = result.hypotheses?.find(item => item.id === sim.hypothesis_id); return <div className="profit-row" key={sim.hypothesis_id}><div className="profit-name"><strong>{hypothesis?.title || sim.channel || sim.hypothesis_id}</strong><small>{sim.price ? `₹${money(sim.price)}` : ''} {sim.channel}</small></div><div className="profit-track"><span className={`profit-bar ${sim.avg_profit >= 0 ? 'positive' : 'negative'}`} style={{ width: `${Math.abs(sim.avg_profit) / maxProfitMagnitude * 50}%` }} /></div><strong className="profit-value">₹{money(sim.avg_profit)}</strong></div>; })}<div className="profit-axis"><span>− lower profit</span><span>0</span><span>higher profit +</span></div></div></section>}
 
           {result?.simulations && <section className="results-block"><div className="section-top"><h3>Competing options</h3><span className="eyebrow">MONTHLY PROJECTION · INR</span></div><div className="table-scroll"><table><thead><tr><th>Option</th><th>Expected</th><th>P10</th><th>P50</th><th>P90</th><th>Profitable</th></tr></thead><tbody>{[...result.simulations].sort((a, b) => b.avg_profit - a.avg_profit).map(sim => { const hypothesis = result.hypotheses?.find(item => item.id === sim.hypothesis_id); return <tr key={sim.hypothesis_id}><td><strong>{hypothesis?.title || sim.channel || sim.hypothesis_id}</strong><small>{sim.price ? `₹${money(sim.price)}` : ''} {sim.channel}</small></td><td>₹{money(sim.avg_profit)}</td><td>₹{money(sim.p10_profit)}</td><td>₹{money(sim.p50_profit)}</td><td>₹{money(sim.p90_profit)}</td><td>{Math.round(sim.prob_positive * 100)}%</td></tr>; })}</tbody></table></div></section>}
 
@@ -309,7 +316,7 @@ export default function App() {
 
           {result?.pilot && <section className="pilot"><div className="eyebrow">PROPOSED NEXT ACTION / REQUIRES APPROVAL</div><h3>Run a capped {result.pilot.duration_weeks}-week pilot.</h3><p>Budget cap: ₹{money(result.pilot.budget_cap_inr)}. Measure {result.pilot.measure.join(', ').toLowerCase()}.</p><p className="pilot-stop">STOP CONDITION · {result.pilot.stop_condition}</p></section>}
 
-          {result && <section className="conversation"><div className="section-top"><h3>Discuss this decision</h3><span className="eyebrow">GROUNDED IN RUN {selectedRun?.version}</span></div>{caseData.messages.map(message => { const messageRun = completedRuns.find(run => run.id === message.run_id); return <div className={`message ${message.role}`} key={message.id}><span className="eyebrow">{message.role === 'user' ? 'YOU' : 'STRATEGY TWIN'}</span><p>{readableMessage(message.content, messageRun?.result.evidence || [])}</p></div>; })}{proposal && <div className="proposal"><strong>New scenario proposed</strong><p>{Object.entries(proposal.overrides).map(([key, value]) => `${key}: ${value}`).join(' · ')}</p><button type="button" className="solid-action" onClick={confirmScenario} disabled={busy}>Confirm new run ↗</button><button type="button" className="quiet-action" onClick={() => setProposal(null)}>Dismiss</button></div>}<div className="composer chat-composer"><textarea aria-label="Discuss the decision" value={chatText} onChange={event => setChatText(event.target.value)} onKeyDown={event => { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); sendChat(); } }} placeholder="Ask why an option won, or propose a new assumption…" rows={2} /><div className="composer-actions"><span className="mono">CHANGES CREATE A NEW RUN</span><button className="send-button" type="button" onClick={sendChat} disabled={busy || !chatText.trim()}>↗</button></div></div></section>}
+          {result && <section className="conversation"><div className="section-top"><h3>Discuss this decision</h3><span className="eyebrow">GROUNDED IN RUN {selectedRun?.version}</span></div>{caseData.messages.map(message => { const messageRun = completedRuns.find(run => run.id === message.run_id); return <div className={`message ${message.role}`} key={message.id}><span className="eyebrow">{message.role === 'user' ? 'YOU' : 'KAIRO'}</span><p>{readableMessage(message.content, messageRun?.result.evidence || [])}</p></div>; })}{chatPending && <div className="message assistant chat-thinking" role="status" aria-live="polite"><span className="eyebrow">KAIRO</span><p>Thinking through the report<span className="thinking-dots"><i /><i /><i /></span></p></div>}{proposal && <div className="proposal"><strong>New scenario proposed</strong><p>{Object.entries(proposal.overrides).map(([key, value]) => `${key}: ${value}`).join(' · ')}</p><button type="button" className="solid-action" onClick={confirmScenario} disabled={busy}>Confirm new run ↗</button><button type="button" className="quiet-action" onClick={() => setProposal(null)}>Dismiss</button></div>}<div className="composer chat-composer"><textarea aria-label="Discuss the decision" value={chatText} onChange={event => setChatText(event.target.value)} onKeyDown={event => { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); sendChat(); } }} placeholder="Ask why an option won, or propose a new assumption…" rows={2} /><div className="composer-actions"><span className="mono">CHANGES CREATE A NEW RUN</span><button className="send-button" type="button" onClick={sendChat} disabled={busy || !chatText.trim()} aria-label={chatPending ? 'Kairo is thinking' : 'Send message'}>{chatPending ? <span className="button-spinner" /> : '↗'}</button></div></div></section>}
         </div>
         <aside className="ledger"><div className="section-top"><h3>Run ledger</h3><span className="mono">{displayedEvents.length} RECORDS</span></div><div className="ledger-list">{displayedEvents.map(event => <button type="button" className={`ledger-event ${selectedEvent?.id === event.id ? 'selected' : ''}`} key={event.id} onClick={() => setSelectedEventId(event.id)}><span className="event-time mono">{new Date(event.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span><span className="event-content"><strong>{eventLabel(event)}</strong><small>{event.stage || event.type} · {event.status || 'recorded'}</small></span></button>)}</div><div className="event-inspector"><div className="eyebrow">SELECTED RECORD / {selectedEvent?.id || '—'}</div>{selectedEvent ? <><h4>{eventLabel(selectedEvent)}</h4><p>{selectedEvent.message || selectedEvent.type.replaceAll('_', ' ')}</p>{Object.entries(selectedEvent).filter(([key]) => !['id', 'case_id', 'created_at', 'type', 'message', 'run_id'].includes(key)).map(([key, value]) => <div className="inspector-row" key={key}><span className="mono">{key.replaceAll('_', ' ')}</span><code>{typeof value === 'object' ? JSON.stringify(value, null, 2) : String(value)}</code></div>)}</> : <p>Events will appear as the system works.</p>}</div></aside></div>}
       </motion.main>}

@@ -38,7 +38,7 @@ export type DecisionResult = {
   simulations?: Simulation[];
   hypotheses?: { id: string; title: string; channel?: string; price?: number; status?: string }[];
   sensitivity?: { elasticity: number; cac_inr: number; leader_hypothesis_id: string; leader_avg_profit: number }[];
-  evidence?: { id: string; source: string; source_type: string; excerpt: string }[];
+  evidence?: { id: string; source?: string; source_type: string; excerpt: string }[];
   challenges?: { id: string; severity: string; weakness: string }[];
   supporting_evidence_ids?: string[];
   counter_evidence_ids?: string[];

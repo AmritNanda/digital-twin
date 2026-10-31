@@ -55,6 +55,8 @@ class DemandIdentificationValidator:
             return ModelIdentificationStatus.SCENARIO_ONLY
         if not self.instrument_or_exogenous_variation:
             return ModelIdentificationStatus.SCENARIO_ONLY
+        if not self.missingness_controlled:
+            return ModelIdentificationStatus.SCENARIO_ONLY
         return ModelIdentificationStatus.IDENTIFIED
 
 
@@ -133,6 +135,8 @@ class DemandModel(ABC):
         grid_step: Decimal = Decimal("1.00"),
     ) -> OptimalPriceResult:
         """Finds profit-maximizing price under approved bounds and identification policy (AT-022)."""
+        if not grid_step.is_finite() or grid_step <= 0:
+            raise ValueError("grid_step must be a positive finite amount")
         # Strict guard: unidentified models CANNOT declare an optimal price
         if self.identification_status == ModelIdentificationStatus.MODEL_NOT_IDENTIFIED:
             raise DemandIdentificationError(

@@ -161,7 +161,10 @@ async def decision_node(state: dict) -> dict:
         raise
     except Exception as e:
         logger.error(f"Decision agent LLM error: {e}")
-        result = {}
+        raise
+
+    if not isinstance(result.get("recommendation"), str) or not result["recommendation"].strip():
+        raise ValueError("Decision model returned no recommendation")
 
     confidence = to_confidence(result.get("confidence"))
 

@@ -37,7 +37,7 @@ from backend.dtp.release.service import (
 
 
 @pytest.fixture
-def env():
+def env(postgres_ready):
     tid, owner_id = repo.bootstrap_tenant("test_tenant", f"owner_{time.time_ns()}@twin.test")
     p = Principal(
         tenant_id=tid,

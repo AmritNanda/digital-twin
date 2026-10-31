@@ -17,7 +17,7 @@ from dtp.tasks import (
 
 
 @pytest.fixture()
-def task_world():
+def task_world(postgres_ready):
     tid, owner_id = repo.bootstrap_tenant("tasks_t", f"o{time.time_ns()}@tasks.test")
     owner = Principal(tid, owner_id, frozenset({Role.OWNER}))
     case = repo.create_case(owner, title="Tasks Case", objective="Execution", horizon_days=30, origin="FIXTURE")

@@ -303,6 +303,7 @@ async def run_case(
     checkpoint_id: str | None = None,
     source_corrections: list[dict] | None = None,
     source_document_ids: list[str] | None = None,
+    prebuilt_twin: dict | None = None,
 ) -> dict:
     """
     Run the full agentic workflow for a case.
@@ -313,7 +314,7 @@ async def run_case(
         "case_id": case_id,
         "question": question,
         "doc_id": doc_id,
-        "twin": None,
+        "twin": prebuilt_twin,   # None → understand_node runs; dict → understand_node skips LLM
         "iteration": 0,
         "research_calls": 0,
         "llm_calls": 0,

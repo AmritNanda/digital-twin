@@ -126,13 +126,12 @@ def execute_optimization_service(inputs: dict[str, Any]) -> AgentOutput:
 
 def execute_verification_service(inputs: dict[str, Any]) -> AgentOutput:
     """A19 Verification: Mandatory deterministic release gates."""
-    decision = inputs.get("decision", {})
     checks = inputs.get("checks", [])
 
-    blockers = []
+    blockers = [] if checks else ["No verification checks were supplied"]
     for c in checks:
-        if c.get("result") == "FAIL" and c.get("mandatory", True):
-            blockers.append(c.get("reason", "Mandatory check failed"))
+        if c.get("mandatory", True) and c.get("result") != "PASS":
+            blockers.append(c.get("reason", f"Mandatory check {c.get('name', 'unknown')} did not pass"))
 
     outcome = "SUCCEEDED" if not blockers else "FAILED"
     return AgentOutput(
@@ -194,9 +193,11 @@ def execute_reasoning_agent(
             fixture_fallback=fallback_response,
         )
         parsed = resp.parsed_json or json.loads(resp.content)
+        if not isinstance(parsed, dict) or not isinstance(parsed.get("unresolved_issues"), list):
+            raise ValueError("Reasoning agent returned an invalid response")
         return AgentOutput(
             capability_id=capability_id,
-            status="SUCCEEDED",
+            status="INCONCLUSIVE" if resp.usage.model.startswith("FIXTURE") else "SUCCEEDED",
             result_data=parsed,
             claims=parsed.get("claims", []),
             unresolved_issues=parsed.get("unresolved_issues", []),
@@ -227,7 +228,7 @@ def dispatch_agent_capability(
     elif capability_id == "A19":
         return execute_verification_service(inputs)
     elif capability_id in ("A21", "A22"):
-        return AgentOutput(capability_id, "SUCCEEDED", {"status": "Service active"}, [], [])
+        return AgentOutput(capability_id, "INCONCLUSIVE", {}, [], ["Capability dispatch is not implemented"])
     else:
         # Hybrid retrieval for reasoning role
         question = inputs.get("question", "")

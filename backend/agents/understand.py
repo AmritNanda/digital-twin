@@ -12,6 +12,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import json
+import time
 from twin import (
     DigitalTwin, Company, Product, CustomerSegment,
     Constraint, Objective, EpistemicStatus
@@ -101,6 +102,7 @@ Extract all business entities and produce a JSON response with this structure:
 
 async def understand_node(state: dict) -> dict:
     """LangGraph node: extract structured understanding from the document."""
+    t0 = time.perf_counter()
     case_id = state["case_id"]
     question = state["question"]
     llm = get_llm_provider()
@@ -112,6 +114,31 @@ async def understand_node(state: dict) -> dict:
         "message": "Analysing company document and extracting business entities...",
         "iteration": state.get("iteration", 0),
     })
+
+    # ── Fast-path: skip LLM extraction when a pre-built twin is passed in ────
+    existing_twin = state.get("twin")
+    if existing_twin:
+        twin = DigitalTwin(**existing_twin)
+        unknowns = twin.unknowns or state.get("unknowns", [])
+        elapsed = time.perf_counter() - t0
+        logger.info("[TIMING] understand_node (reused twin): %.2fs", elapsed)
+        events.append({
+            "type": "agent_complete",
+            "agent": "Understanding Agent",
+            "summary": f"Reused pre-extracted twin: {twin.entity_summary()}. {len(unknowns)} unknowns.",
+            "twin_summary": twin.entity_summary(),
+            "unknowns": unknowns,
+            "used_passages": [],
+            "reused": True,
+        })
+        return {
+            "twin": twin.model_dump(),
+            "unknowns": unknowns,
+            "llm_calls": state.get("llm_calls", 0),   # no LLM call consumed
+            "events": events,
+            "evidence_summaries": state.get("evidence_summaries", []),
+        }
+    # ── Slow-path: full LLM extraction from RAG ───────────────────────────────
 
     # Retrieve relevant chunks from RAG
     spans = await asyncio.to_thread(retrieve_for_question, question, case_id, 12)
@@ -218,6 +245,9 @@ async def understand_node(state: dict) -> dict:
                             "excerpt": s.text[:240], "retrieval_method": s.retrieval_method}
                            for s in spans],
     })
+
+    elapsed = time.perf_counter() - t0
+    logger.info("[TIMING] understand_node: %.2fs", elapsed)
 
     return {
         "twin": twin.model_dump(),

@@ -210,7 +210,7 @@ class VerificationService:
                 check_id="CHK-CITE-001",
                 name="Citation Provenance Grounding",
                 status=CheckStatus.PASS,
-                diagnostic=f"All {len(sources)} cited sources grounded in accepted spans",
+                diagnostic=f"All {len(sources)} citation identifiers supplied; span grounding requires a separate check",
             ))
 
         # 5. Check Stale Parameters (SRS-044)

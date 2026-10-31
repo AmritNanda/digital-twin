@@ -15,6 +15,7 @@ from __future__ import annotations
 import json
 import logging
 import re
+import time
 from abc import ABC, abstractmethod
 from typing import Any, Optional
 from urllib.parse import urlsplit
@@ -41,6 +42,7 @@ _FATAL_ERRORS = (
     openai.PermissionDeniedError,
     openai.NotFoundError,
     openai.APIConnectionError,
+    openai.RateLimitError,
 )
 
 
@@ -106,6 +108,7 @@ class OpenAICompatibleProvider(LLMProvider):
         return {}
 
     async def complete(self, system: str, user: str, temperature: Optional[float] = None) -> str:
+        t0 = time.perf_counter()
         try:
             resp = await self.client.chat.completions.create(
                 model=self.model,
@@ -116,9 +119,23 @@ class OpenAICompatibleProvider(LLMProvider):
                 temperature=self._temp(temperature),
                 **self._provider_options(),
             )
+            usage = getattr(resp, "usage", None)
+            elapsed = time.perf_counter() - t0
+            if usage:
+                logger.info(
+                    "[LLM] complete: %.2fs | in=%s out=%s total=%s | model=%s",
+                    elapsed,
+                    getattr(usage, "prompt_tokens", "?"),
+                    getattr(usage, "completion_tokens", "?"),
+                    getattr(usage, "total_tokens", "?"),
+                    self.model,
+                )
+            else:
+                logger.info("[LLM] complete: %.2fs | model=%s", elapsed, self.model)
             return resp.choices[0].message.content or ""
         except _FATAL_ERRORS as e:
-            raise LLMUnavailableError(f"LLM unavailable ({type(e).__name__}): {e}") from e
+            reason = "rate limit exceeded" if isinstance(e, openai.RateLimitError) else "unavailable"
+            raise LLMUnavailableError(f"LLM {reason} ({type(e).__name__}): {e}") from e
         except Exception as e:
             logger.error(f"LLM complete error: {e}")
             raise
@@ -139,6 +156,7 @@ class OpenAICompatibleProvider(LLMProvider):
             "Do not include markdown code fences, preambles, or explanations. "
             "Respond with a single JSON object."
         )
+        t0 = time.perf_counter()
         try:
             resp = await self.client.chat.completions.create(
                 model=self.model,
@@ -150,23 +168,42 @@ class OpenAICompatibleProvider(LLMProvider):
                 response_format={"type": "json_object"},
                 **self._provider_options(),
             )
+            usage = getattr(resp, "usage", None)
+            elapsed = time.perf_counter() - t0
+            if usage:
+                logger.info(
+                    "[LLM] complete_json: %.2fs | in=%s out=%s total=%s | model=%s",
+                    elapsed,
+                    getattr(usage, "prompt_tokens", "?"),
+                    getattr(usage, "completion_tokens", "?"),
+                    getattr(usage, "total_tokens", "?"),
+                    self.model,
+                )
+            else:
+                logger.info("[LLM] complete_json: %.2fs | model=%s", elapsed, self.model)
             content = resp.choices[0].message.content or "{}"
             result = _extract_json(content)
-            return result if isinstance(result, dict) else {}
+            if not isinstance(result, dict):
+                raise ValueError("Model response must be a JSON object")
+            return result
         except _FATAL_ERRORS as e:
-            raise LLMUnavailableError(f"LLM unavailable ({type(e).__name__}): {e}") from e
+            reason = "rate limit exceeded" if isinstance(e, openai.RateLimitError) else "unavailable"
+            raise LLMUnavailableError(f"LLM {reason} ({type(e).__name__}): {e}") from e
         except Exception as e:
             # If response_format not supported, try plain text + parse
-            logger.warning(f"JSON mode failed ({e}), falling back to text parse")
+            logger.warning("[LLM] JSON mode failed after %.2fs (%s), falling back to text parse",
+                           time.perf_counter() - t0, e)
             try:
                 text = await self.complete(system_with_json, user, temperature)
                 result = _extract_json(text)
-                return result if isinstance(result, dict) else {}
+                if not isinstance(result, dict):
+                    raise ValueError("Model response must be a JSON object")
+                return result
             except LLMUnavailableError:
                 raise
             except Exception as e2:
                 logger.error(f"JSON fallback also failed: {e2}")
-                return {}
+                raise LLMUnavailableError("LLM did not return a valid JSON object") from e2
 
 
 _provider: Optional[LLMProvider] = None

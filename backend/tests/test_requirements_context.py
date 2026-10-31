@@ -76,4 +76,29 @@ def test_api_endpoints():
     assert all("key" not in repr(x).lower() or "missing_env" in x for x in caps)
     r = c.post("/api/case", json={"question": "What price should we choose?", "country": "ZZ"})
     assert r.status_code == 400
-    assert "static/requirements.js" in c.get("/").text
+    home = c.get("/")
+    assert home.status_code == 200
+    marker = 'id="root"' if (main.FRONTEND_DIST / "index.html").exists() else "static/requirements.js"
+    assert marker in home.text
+
+
+@pytest.mark.parametrize("path,payload", [
+    ("/api/simulation/evaluate", {"draw_count": 0}),
+    ("/api/simulation/evaluate", {"price_std": 0}),
+    ("/api/cashflow/evaluate", {"total_periods": -1}),
+    ("/api/cashflow/evaluate", {"units_per_period": -1}),
+])
+def test_numerical_api_rejects_invalid_inputs(path, payload):
+    from main import app
+    from fastapi.testclient import TestClient
+
+    assert TestClient(app).post(path, json=payload).status_code == 422
+
+
+def test_numerical_api_defaults_execute():
+    from main import app
+    from fastapi.testclient import TestClient
+
+    client = TestClient(app)
+    assert client.post("/api/simulation/evaluate", json={}).status_code == 200
+    assert client.post("/api/cashflow/evaluate", json={}).status_code == 200

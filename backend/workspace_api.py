@@ -330,11 +330,42 @@ async def _execute(case_id: str, run_id: str, question: str, resume: dict | None
             owner_id = db.execute("SELECT owner_id FROM cases WHERE id=?", (case_id,)).fetchone()[0]
         case_before = store.get_case(case_id, owner_id)
         source_version = case_before["source_snapshot"].get("version", 0)
+
+        # Reuse the twin that _prepare_source already extracted, if available.
+        # This skips a full understand_node LLM call for every run on the same documents.
+        prebuilt_twin: dict | None = None
+        snap = case_before["source_snapshot"]
+        if snap.get("status") == "extracted" and snap.get("entities"):
+            from twin import DigitalTwin, Company, Product, CustomerSegment, Constraint, Objective
+            try:
+                # Reconstruct a minimal DigitalTwin from the stored entities
+                dt = DigitalTwin(case_id=case_id, question=case_before["question"] or "")
+                for ent in snap["entities"]:
+                    etype = ent.get("type", "")
+                    attrs = {k: v for k, v in ent.get("attributes", {}).items() if v is not None}
+                    if etype == "Company":
+                        dt.companies.append(Company(name=ent["name"], attributes=attrs))
+                    elif etype == "Product":
+                        dt.products.append(Product(name=ent["name"], attributes=attrs))
+                    elif etype == "CustomerSegment":
+                        dt.segments.append(CustomerSegment(name=ent["name"], attributes=attrs))
+                    elif etype == "Constraint":
+                        dt.constraints.append(Constraint(name=ent["name"], attributes=attrs))
+                    elif etype == "Objective":
+                        dt.objectives.append(Objective(name=ent["name"], attributes=attrs))
+                dt.unknowns = snap.get("unknowns", [])
+                prebuilt_twin = dt.model_dump()
+            except Exception as _twin_err:
+                import logging as _log
+                _log.getLogger(__name__).warning("Could not reuse stored twin: %s", _twin_err)
+                prebuilt_twin = None
+
         outcome = await asyncio.wait_for(
             run_case(case_id, question, None, emit, require_approval=True, resume=resume,
                      checkpoint_id=run_id,
                      source_corrections=case_before["source_snapshot"].get("corrections", []),
-                     source_document_ids=[doc["id"] for doc in case_before["documents"]]),
+                     source_document_ids=[doc["id"] for doc in case_before["documents"]],
+                     prebuilt_twin=prebuilt_twin),
             timeout=settings.case_timeout_seconds,
         )
         if outcome.get("error"):
@@ -597,7 +628,7 @@ def _pdf_bytes(payload: dict) -> bytes:
                               fontName=normal_font, leading=9, textColor=colors.HexColor("#686c65")))
     case, run = payload["case"], payload["run"]
     result = run["result"]
-    story = [Paragraph("STRATEGY TWIN / DECISION FILE", styles["ReportSmall"]), Spacer(1, 12),
+    story = [Paragraph("KAIRO / DECISION FILE", styles["ReportSmall"]), Spacer(1, 12),
              Paragraph(escape(case["question"] or "Decision report"), styles["ReportTitle"]),
              Paragraph(f"Decision run {run['version']}", styles["ReportSmall"]),
              Spacer(1, 16), Paragraph("Recommendation", styles["Heading2"]),

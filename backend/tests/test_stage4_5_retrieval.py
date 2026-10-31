@@ -15,7 +15,7 @@ from dtp.retrieval import compute_rrf, embed_query, embed_texts, hybrid_search
 
 
 @pytest.fixture()
-def retrieval_world():
+def retrieval_world(postgres_ready):
     tid, owner_id = repo.bootstrap_tenant("retrieval_t", f"o{time.time_ns()}@retrieval.test")
     owner = Principal(tid, owner_id, frozenset({Role.OWNER}), grants=frozenset({(Op.ACCEPT, "financial")}))
     case = repo.create_case(owner, title="Retrieval Case", objective="Market test", horizon_days=90, origin="FIXTURE")

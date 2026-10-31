@@ -1,22 +1,26 @@
 # Implementation Status (navigation aid — NOT a substitute for the spec)
 
+Audit note (2026-10-24): The live browser case flow uses `backend/workspace_api.py`, SQLite, and `backend/agents/`. The `backend/dtp/` PostgreSQL platform is separate and is not the browser's decision engine. Its prototype orchestration graph now blocks release because it does not produce verified draft lineage. Database integration tests require a configured PostgreSQL service; they have not been rerun on this PC.
+
+Remaining release gap: `backend/dtp/release/verification.py` checks that citation identifiers are present, but does not look them up in accepted evidence spans. A passing standalone verification report must not be treated as proof of source grounding. The legacy `/api/upload` and `/api/case` endpoints also remain unauthenticated; keep them off a public deployment until their access model is resolved.
+
 Spec: `prd,srs,and much more bbg/outputs/requirements-v1/` (SRS.md is controlling).
-Last updated: 2026-10-24. Environment: Windows, Python 3.13.11, pytest-9.1.1, PostgreSQL 17 + pgvector in Docker container `dtp-postgres` on `127.0.0.1:5433`.
+Last updated: 2026-10-24. The original stage report used Windows, Python 3.13.11, pytest-9.1.1, and PostgreSQL 17 + pgvector in Docker. PostgreSQL and Docker were unavailable during this local audit.
 
 ## Honest Gate Summary
 | Gate | State | Evidence |
 |---|---|---|
-| Software implementation (full PRD/SRS) | **COMPLETED (Stages 1 through 12 implemented and verified)** | 105 tests passed across 10 test modules |
-| Local database & storage layer | **ACTIVE & VERIFIED** | PostgreSQL 17 + pgvector container running with 8 SQL migrations applied |
-| Canonical contracts & identity matrix | **ACTIVE & VERIFIED** | JSON Schema Draft 2020-12, permission matrix, RLS FORCE on all tables |
+| Software implementation (full PRD/SRS) | **PARTIAL** | DTP modules exist, but the prototype graph cannot release a verified decision and is not connected to `/api/cases` |
+| Local database & storage layer | **NOT VERIFIED ON THIS PC** | PostgreSQL is not configured here; migration 0009 and database integration tests remain unverified |
+| Canonical contracts & identity matrix | **UNIT CHECKS PASS; DATABASE UNVERIFIED** | JSON Schema and permission matrix run locally; PostgreSQL RLS needs an integration run |
 | Numerical domain engines | **ACTIVE & VERIFIED** | Exact decimal cash flow, demand identification, Monte Carlo copula, Pareto solver |
-| Release & verification pipeline | **ACTIVE & VERIFIED** | Deterministic verification, adversarial falsification, atomic release pointers |
-| Continuous loop & action gateway | **ACTIVE & VERIFIED** | Content-hash watchers, dependency invalidation, cryptographic approval gateway |
+| Release & verification pipeline | **PARTIAL / DATABASE UNVERIFIED** | The standalone services need PostgreSQL and the workflow has no verified draft lineage |
+| Continuous loop & action gateway | **DATABASE UNVERIFIED** | The action gateway now claims dispatches atomically; migration 0009 needs a PostgreSQL test run |
 
 ---
 
 ## Repository Test Suite Summary
-**`python -m pytest backend/tests/` → 105 passed, 0 failed, 0 skipped (68s runtime)**
+**Historical teammate result:** `python -m pytest backend/tests/` → 105 passed (reported before this audit). Current local runs skip PostgreSQL integration cases because the service is not configured.
 
 - `backend/tests/test_requirements_context.py` (12 passed): Jurisdiction, currency, tax basis defaulting to USA/USD, document checklist heuristics.
 - `backend/tests/test_stage1.py` (39 passed): Core JSON Schema Draft 2020-12 validation, semantic validators, permission matrix, lifecycle state transitions, deterministic unit economics (AT-023 golden fixture).
@@ -64,9 +68,9 @@ Last updated: 2026-10-24. Environment: Windows, Python 3.13.11, pytest-9.1.1, Po
 ### Stage 7 & 8: Provider Boundary, 23 Catalog Capabilities & LangGraph Workflow
 - Implemented in `backend/dtp/providers/adapter.py`, `backend/dtp/orchestration/factory.py`, `backend/dtp/orchestration/catalog.py`, `backend/dtp/orchestration/workflow.py`.
 - Provider adapter tracking token usage, latency, spend caps, and offline fallback.
-- Factory defining admission rules, roles, and tool allowlists for all 23 catalog agents (`A01`–`A23`).
-- Deterministic capability routines for Financial (`A07`), Simulation (`A14`), Optimization (`A15`), Verification (`A19`), Memory (`A21`), Factory (`A22`), and reasoning prompts.
-- Compiled cyclic LangGraph workflow graph linking investigation lifecycle states.
+- Factory defining admission rules, roles, and tool allowlists for all 23 catalog capabilities (`A01`–`A23`). Catalog dispatch for A21 and A22 is still a placeholder and reports `INCONCLUSIVE`.
+- Deterministic capability routines for Financial (`A07`), Simulation (`A14`), Optimization (`A15`), Verification (`A19`), and reasoning prompts.
+- Prototype LangGraph workflow linking investigation states. Release is blocked until it can supply genuine verification checks.
 
 ### Stage 9: Numerical Domain Layer
 - Implemented in `backend/dtp/numerical/cashflow.py`, `backend/dtp/numerical/demand.py`, `backend/dtp/numerical/simulation.py`, `backend/dtp/numerical/optimization.py`, `backend/dtp/numerical/counterfactual.py`.

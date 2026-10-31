@@ -27,7 +27,7 @@ Rules:
 1. Only create research tasks for things that are genuinely UNKNOWN or UNCERTAIN
 2. Each task must be specific enough that an internet search could yield useful results
 3. Prioritize by decision impact — what would most change the recommendation?
-4. Maximum 4 tasks per planning cycle
+4. Return at most 2 tasks — the two highest-priority unknowns only
 5. Do not create duplicate tasks for things already in the completed list
 6. Consider: price sensitivity, competitor positioning, market size, regulatory requirements,
    customer acquisition costs, distribution channels, and financial feasibility
@@ -64,6 +64,9 @@ Order tasks by priority (1 = most important).
 
 async def planner_node(state: dict) -> dict:
     """LangGraph node: determine what research is needed next."""
+    import time
+    t0 = time.perf_counter()
+
     twin_data = state.get("twin", {})
     twin = DigitalTwin(**twin_data) if twin_data else None
 
@@ -72,14 +75,19 @@ async def planner_node(state: dict) -> dict:
     unknowns = state.get("unknowns", [])
     llm = get_llm_provider()
 
+    # Cap context sent to the model: key entities + up to 5 unknowns only
+    if twin:
+        context_lines = twin.to_context_str().splitlines()
+        twin_context = "\n".join(context_lines[:80])  # ~2 000 tokens max
+    else:
+        twin_context = f"Question: {question}"
+
     events = [{
         "type": "agent_start",
         "agent": "Planner Agent",
         "message": "Evaluating what evidence is needed to answer the strategic question...",
         "iteration": state.get("iteration", 0),
     }]
-
-    twin_context = twin.to_context_str() if twin else f"Question: {question}"
 
     try:
         result = await llm.complete_json(
@@ -88,7 +96,7 @@ async def planner_node(state: dict) -> dict:
                 twin_context=twin_context,
                 question=question,
                 completed_tasks="\n".join(f"- {t}" for t in completed) or "None yet",
-                unknowns="\n".join(f"- {u}" for u in unknowns) or "None identified",
+                unknowns="\n".join(f"- {u}" for u in unknowns[:5]) or "None identified",
             ),
         )
     except LLMUnavailableError:
@@ -97,19 +105,24 @@ async def planner_node(state: dict) -> dict:
         logger.error(f"Planner LLM error: {e}")
         result = {"research_tasks": [], "planning_rationale": ""}
 
-    # Keep only well-formed tasks that haven't already been investigated
+    elapsed = time.perf_counter() - t0
+    logger.info("[TIMING] planner_node: %.2fs", elapsed)
+
+    # Keep only well-formed tasks that haven't already been investigated.
+    # Limit to 2 tasks per cycle — we prefer fewer, higher-value searches.
     done = {c.split(":")[0].strip().lower() for c in completed}
     tasks = [
         t for t in (result.get("research_tasks") or [])
         if isinstance(t, dict) and t.get("query") and t["query"].strip().lower() not in done
-    ][:4]
+    ][:2]
     rationale = result.get("planning_rationale", "")
 
     events.append({
         "type": "agent_complete",
         "agent": "Planner Agent",
-        "message": f"Generated {len(tasks)} research tasks. Strategy: {rationale}",
+        "message": f"Generated {len(tasks)} research tasks in {elapsed:.1f}s. Strategy: {rationale}",
         "research_tasks": tasks,
+        "elapsed_seconds": round(elapsed, 2),
     })
 
     return {

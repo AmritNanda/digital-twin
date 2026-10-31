@@ -17,11 +17,12 @@ from enum import Enum
 from typing import Callable, Dict, List, Optional, Tuple, Any
 
 from backend.dtp.db import tenant_tx
-from backend.dtp.identity import Principal
+from backend.dtp.identity import Op, Principal, ResourceScope, authorize
 
 
 class ActionStatus(str, Enum):
     PENDING = "PENDING"
+    DISPATCHING = "DISPATCHING"
     EXECUTED = "EXECUTED"
     FAILED = "FAILED"
     UNKNOWN = "UNKNOWN"
@@ -69,6 +70,7 @@ class ActionGateway:
         payload: Dict[str, Any],
         idempotency_key: str,
     ) -> ActionReceipt:
+        authorize(principal, Op.PROPOSE, ResourceScope(principal.tenant_id, case_id))
         h = self.compute_approval_hash(payload)
         rec_id = f"act-{uuid.uuid4().hex[:12]}"
 
@@ -81,6 +83,9 @@ class ActionGateway:
                 )
                 existing = cur.fetchone()
                 if existing:
+                    if (existing["approval_hash"] != h or str(existing["case_id"]) != str(case_id)
+                            or existing["action_type"] != action_type):
+                        raise ApprovalHashMismatchError("Idempotency key already belongs to a different action")
                     return ActionReceipt(
                         id=existing["id"],
                         tenant_id=str(existing["tenant_id"]),
@@ -142,12 +147,15 @@ class ActionGateway:
         with tenant_tx(principal.tenant_id) as conn:
             with conn.cursor() as cur:
                 cur.execute(
-                    "SELECT id, tenant_id, case_id, action_type, payload, approval_hash, idempotency_key, status, execution_receipt, created_at FROM action_receipts WHERE id = %s FOR UPDATE",
+                    "SELECT id, tenant_id, case_id, action_type, payload, approval_hash, idempotency_key, status, execution_receipt, created_at, executed_at FROM action_receipts WHERE id = %s FOR UPDATE",
                     (action_id,),
                 )
                 rec = cur.fetchone()
                 if not rec:
                     raise KeyError(f"Action {action_id} not found")
+
+                authorize(principal, Op.APPROVE_ACTION,
+                          ResourceScope(principal.tenant_id, str(rec["case_id"]), rec["action_type"]))
 
                 if rec["status"] == ActionStatus.EXECUTED.value:
                     # Idempotent return
@@ -162,8 +170,11 @@ class ActionGateway:
                         status=ActionStatus.EXECUTED,
                         execution_receipt=rec["execution_receipt"],
                         created_at=rec["created_at"],
-                        executed_at=None,
+                        executed_at=rec["executed_at"],
                     )
+
+                if rec["status"] != ActionStatus.PENDING.value:
+                    raise ActionAlreadyExecutedError(f"Action {action_id} is {rec['status']}; reconcile before retrying")
 
                 # 2. Cryptographic approval verification: tamper detection (AT-047)
                 exec_hash = self.compute_approval_hash(execution_payload)
@@ -171,6 +182,9 @@ class ActionGateway:
                     raise ApprovalHashMismatchError(
                         f"Execution payload hash {exec_hash} does not match approved hash {rec['approval_hash']}. Payload was modified (SRS-047, AT-047)!"
                     )
+
+                cur.execute("UPDATE action_receipts SET status = %s WHERE id = %s",
+                            (ActionStatus.DISPATCHING.value, action_id))
 
         # 3. Call external sandbox executor
         try:
@@ -180,6 +194,9 @@ class ActionGateway:
             # Reconcile timeout to UNKNOWN (AT-042)
             final_status = ActionStatus.UNKNOWN
             receipt = {"error": "External call timed out; transitioning to UNKNOWN pending reconciliation (AT-042)"}
+        except Exception as exc:
+            final_status = ActionStatus.UNKNOWN
+            receipt = {"error": f"External call outcome unknown ({type(exc).__name__}); reconcile before retrying"}
 
         # 4. Update status in database
         with tenant_tx(principal.tenant_id) as conn:
@@ -190,12 +207,15 @@ class ActionGateway:
                     SET status = %s,
                         execution_receipt = %s,
                         executed_at = NOW()
-                    WHERE id = %s
+                    WHERE id = %s AND status = %s
                     RETURNING executed_at
                     """,
-                    (final_status.value, json.dumps(receipt), action_id),
+                    (final_status.value, json.dumps(receipt), action_id, ActionStatus.DISPATCHING.value),
                 )
-                exec_at = cur.fetchone()["executed_at"]
+                updated = cur.fetchone()
+                if not updated:
+                    raise ActionAlreadyExecutedError(f"Action {action_id} changed during dispatch")
+                exec_at = updated["executed_at"]
 
         return ActionReceipt(
             id=action_id,

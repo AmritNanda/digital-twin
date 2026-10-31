@@ -262,7 +262,7 @@ class MonteCarloSimulator:
                 reason = reason or "UNKNOWN_DOMAIN_VIOLATION"
                 invalid_reasons[reason] = invalid_reasons.get(reason, 0) + 1
 
-        n_invalid = len(draw_dict) if False else (n_draws - len(valid_profits))
+        n_invalid = n_draws - len(valid_profits)
         invalid_rate = n_invalid / float(n_draws)
 
         # 4. Check tolerance threshold

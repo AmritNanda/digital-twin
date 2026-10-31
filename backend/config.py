@@ -46,7 +46,7 @@ class Settings(BaseSettings):
     max_iterations: int = 12
     max_research_calls: int = 6
     max_llm_calls: int = 40
-    case_timeout_seconds: int = 300
+    case_timeout_seconds: int = 1200
 
     def model_post_init(self, __context) -> None:
         # Anchor relative storage paths to the project root

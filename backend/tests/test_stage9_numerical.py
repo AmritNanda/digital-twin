@@ -179,6 +179,23 @@ def test_at022_demand_identification_and_out_of_bounds():
     assert "Conditional scenario comparison only" in res.rejection_reason
 
 
+def test_demand_identification_requires_missingness_control_and_positive_grid():
+    from backend.dtp.numerical.demand import DemandIdentificationValidator
+
+    validator = DemandIdentificationValidator(
+        has_price_variation=True, sample_size=100, temporal_holdout_validated=True,
+        instrument_or_exogenous_variation=True, missingness_controlled=False,
+    )
+    assert validator.validate() == ModelIdentificationStatus.SCENARIO_ONLY
+
+    model = LinearDemand(
+        intercept=Decimal("2000"), slope=Decimal("1"), price_min=Decimal("500"),
+        price_max=Decimal("1000"), currency="INR",
+    )
+    with pytest.raises(ValueError, match="grid_step"):
+        model.find_optimal_price(Decimal("300"), grid_step=Decimal("0"))
+
+
 def test_at025_reproducible_monte_carlo_and_invalid_draws():
     """AT-025: Pinned model/seed/environment run repeats; invalid draws classified.
     

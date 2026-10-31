@@ -17,7 +17,7 @@ from dtp.tasks import create_investigation, submit_task
 
 
 @pytest.fixture()
-def orch_world():
+def orch_world(postgres_ready):
     tid, owner_id = repo.bootstrap_tenant("orch_t", f"o{time.time_ns()}@orch.test")
     owner = Principal(tid, owner_id, frozenset({Role.OWNER}))
     case = repo.create_case(owner, title="Orchestration Case", objective="Launch strategy", horizon_days=90, origin="FIXTURE")
@@ -94,5 +94,5 @@ def test_langgraph_full_twin_workflow_execution(orch_world):
     assert len(final_state["hypotheses"]) >= 2
     assert len(final_state["simulation_results"]) >= 2
     assert len(final_state["challenges"]) > 0
-    assert final_state["stop_reason"] == "CONVERGED"
-    assert "summary" in final_state["final_decision"]
+    assert final_state["stop_reason"] == "VERIFICATION_FAILED"
+    assert final_state["final_decision"] == {}

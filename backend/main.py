@@ -15,7 +15,7 @@ from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, FiniteFloat
 
 from config import settings
 from rag.ingest import ingest_document, attach_document_to_case
@@ -301,12 +301,12 @@ def health():
 
 
 class SimulationApiRequest(BaseModel):
-    seed: int = 42
-    draw_count: int = 1000
-    price_mean: float = 699.0
-    price_std: float = 30.0
-    cogs_mean: float = 315.0
-    cogs_std: float = 15.0
+    seed: int = Field(default=42, ge=0, le=2**64 - 1)
+    draw_count: int = Field(default=1000, ge=1, le=10000)
+    price_mean: FiniteFloat = Field(default=699.0, ge=0)
+    price_std: FiniteFloat = Field(default=30.0, gt=0)
+    cogs_mean: FiniteFloat = Field(default=315.0, ge=0)
+    cogs_std: FiniteFloat = Field(default=15.0, gt=0)
 
 
 @app.post("/api/simulation/evaluate")
@@ -333,11 +333,11 @@ def evaluate_simulation(req: SimulationApiRequest):
 
 
 class CashFlowApiRequest(BaseModel):
-    initial_cash: float = 100000.0
-    unit_purchase_cost: float = 315.0
-    unit_selling_price: float = 699.0
-    units_per_period: int = 300
-    total_periods: int = 3
+    initial_cash: FiniteFloat = Field(default=100000.0, ge=0)
+    unit_purchase_cost: FiniteFloat = Field(default=315.0, ge=0)
+    unit_selling_price: FiniteFloat = Field(default=699.0, ge=0)
+    units_per_period: int = Field(default=300, ge=0)
+    total_periods: int = Field(default=3, ge=1, le=120)
 
 
 @app.post("/api/cashflow/evaluate")

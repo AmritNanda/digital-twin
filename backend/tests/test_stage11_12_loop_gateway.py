@@ -15,7 +15,7 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from backend.dtp import repo
-from backend.dtp.identity import Principal, Role
+from backend.dtp.identity import AuthorizationError, Op, Principal, Role
 from backend.dtp.watchers.service import WatcherService
 from backend.dtp.experiments.service import (
     ExperimentService,
@@ -25,6 +25,7 @@ from backend.dtp.experiments.service import (
 from backend.dtp.gateway.service import (
     ActionGateway,
     ActionStatus,
+    ActionAlreadyExecutedError,
     ApprovalHashMismatchError,
 )
 from backend.dtp.release.service import ReleaseService, DecisionOutcome, DecisionStatus
@@ -32,12 +33,13 @@ from backend.dtp.release.verification import VerificationService
 
 
 @pytest.fixture
-def env():
+def env(postgres_ready):
     tid, owner_id = repo.bootstrap_tenant("loop_tenant", f"owner_{time.time_ns()}@twin.test")
     p = Principal(
         tenant_id=tid,
         actor_id=owner_id,
         roles=frozenset({Role.OWNER, Role.ANALYST, Role.RESEARCH_OPERATOR}),
+        grants=frozenset({(Op.APPROVE_ACTION, "UPDATE_CAMPAIGN_BUDGET")}),
     )
     case_id = repo.create_case(
         p=p,
@@ -191,6 +193,13 @@ def test_at047_external_action_gateway(env):
     )
     assert receipt_idem.id == receipt.id
 
+    with pytest.raises(ApprovalHashMismatchError, match="different action"):
+        gw.request_action_approval(p, case_id, "UPDATE_CAMPAIGN_BUDGET", {**action_payload, "daily_budget_cents": 1}, idemp_key)
+
+    unapproved = Principal(p.tenant_id, p.actor_id, frozenset({Role.ANALYST}))
+    with pytest.raises(AuthorizationError):
+        gw.execute_action(unapproved, receipt.id, action_payload, lambda _: ("SUCCESS", {}))
+
     # 2. Tampered execution payload (budget raised to 999999) fails execution
     tampered_payload = {
         "channel": "google_ads",
@@ -218,3 +227,5 @@ def test_at047_external_action_gateway(env):
     )
     assert receipt_timeout.status == ActionStatus.UNKNOWN
     assert "transitioning to UNKNOWN" in receipt_timeout.execution_receipt["error"]
+    with pytest.raises(ActionAlreadyExecutedError):
+        gw.execute_action(p, receipt.id, action_payload, lambda _: ("SUCCESS", {}))
